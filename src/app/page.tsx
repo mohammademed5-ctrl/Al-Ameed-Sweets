@@ -144,15 +144,21 @@ export default function AlAmeedStore() {
     setUploadingId('logo');
     const publicUrl = await uploadImageToStorage(selectedLogoFile);
     if (publicUrl) {
-      await supabase.from('store_settings').upsert({
-        id: 1,
-        logo_url: publicUrl,
-        banner_image_url: bannerUrl,
-      });
-      setLogoUrl(publicUrl);
-      setSelectedLogoFile(null);
-      setLogoPreview(null);
-      await fetchStoreData();
+      // تحديث عمود اللوجو فقط في قاعدة البيانات لضمان عدم تأثر البانر
+      const { error } = await supabase
+        .from('store_settings')
+        .update({ logo_url: publicUrl })
+        .eq('id', 1);
+
+      if (error) {
+        alert('خطأ في حفظ اللوجو بقاعدة البيانات: ' + error.message);
+      } else {
+        setLogoUrl(publicUrl);
+        setSelectedLogoFile(null);
+        setLogoPreview(null);
+        await fetchStoreData();
+        alert('تم حفظ وتحديث اللوجو بنجاح!');
+      }
     }
     setUploadingId(null);
   }
@@ -162,15 +168,21 @@ export default function AlAmeedStore() {
     setUploadingId('banner');
     const publicUrl = await uploadImageToStorage(selectedBannerFile);
     if (publicUrl) {
-      await supabase.from('store_settings').upsert({
-        id: 1,
-        logo_url: logoUrl,
-        banner_image_url: publicUrl,
-      });
-      setBannerUrl(publicUrl);
-      setSelectedBannerFile(null);
-      setBannerPreview(null);
-      await fetchStoreData();
+      // تحديث عمود البانر فقط في قاعدة البيانات لضمان عدم تأثر اللوجو
+      const { error } = await supabase
+        .from('store_settings')
+        .update({ banner_image_url: publicUrl })
+        .eq('id', 1);
+
+      if (error) {
+        alert('خطأ في حفظ البانر بقاعدة البيانات: ' + error.message);
+      } else {
+        setBannerUrl(publicUrl);
+        setSelectedBannerFile(null);
+        setBannerPreview(null);
+        await fetchStoreData();
+        alert('تم حفظ وتحديث البانر بنجاح!');
+      }
     }
     setUploadingId(null);
   }
@@ -193,6 +205,7 @@ export default function AlAmeedStore() {
         return copy;
       });
       await fetchStoreData();
+      alert('تم تحديث صورة الصنف بنجاح!');
     }
     setUploadingId(null);
   }
