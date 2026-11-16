@@ -1,7 +1,7 @@
-حلواني العميد use client';
+'use client';
 
 import React, { useEffect, useState } from 'react';
-import { createClient } from '@supabase/supabase-js'
+import { createClient } from '@supabase/supabase-js';
 import {
   ShoppingBag,
   Phone,
@@ -160,7 +160,7 @@ export default function AlAmeedStore() {
       )
       .join('\n');
 
-    const message = `السلام عليكم، طلب جديد من موقع *مصنع حلويات العميد* 👑\n\n*الاسم:* ${customerName}\n*الموبايل:* ${customerPhone}\n*العنوان:* ${customerAddress}\n${
+    const message = `السلام عليكم، طلب جديد من موقع *حلواني العميد* 👑\n\n*الاسم:* ${customerName}\n*الموبايل:* ${customerPhone}\n*العنوان:* ${customerAddress}\n${
       orderNotes ? `*ملاحظات:* ${orderNotes}\n` : ''
     }\n*تفاصيل الطلب:*\n${itemsLines}\n\n*الإجمالي المطلوب:* ${totalAmount} جنيه مصري`;
 
@@ -229,9 +229,9 @@ export default function AlAmeedStore() {
             </div>
             <div>
               <h1 className="text-lg md:text-2xl font-black text-[#D5A642] leading-tight">
-                مصنع حلويات العميد
+                حلواني العميد
               </h1>
-              <p className="text-xs text-[#FFF2D6]/85">ي</p>
+              <p className="text-xs text-[#FFF2D6]/85">أصل الكحك والبسكويت من مصنع العميد</p>
             </div>
           </div>
 
@@ -270,7 +270,7 @@ export default function AlAmeedStore() {
             <Sparkles className="w-4 h-4" /> طازج يومياً من مصنعنا إليك مباشرة
           </span>
           <h2 className="text-3xl md:text-5xl font-black text-[#FFF2D6] leading-snug">
-            طعم الأصالة في كل قطعة من <span className="text-[#D5A642]">حلويات العميد</span>
+            من إيد العميد <span className="text-[#D5A642]">الحلو أكيد</span>
           </h2>
           <p className="text-sm md:text-base text-[#FFF2D6]/90 max-w-2xl mx-auto">
             كحك ناعم، بسكويت فاخر، بيتي فور، غريبة، وأجود الحلويات الشرقية المصنوعة بأجود أنواع السمنة البلدي والمكسرات.
@@ -317,7 +317,7 @@ export default function AlAmeedStore() {
         {/* قائمة المنتجات */}
         {loading ? (
           <div className="text-center py-16 font-bold text-lg text-[#064B40]">
-            جاري تحميل قائمة حلويات العميد...
+            جاري تحميل قائمة حلواني العميد...
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -424,7 +424,7 @@ export default function AlAmeedStore() {
                 <CheckCircle2 className="w-16 h-16 text-green-600 mx-auto" />
                 <h4 className="text-2xl font-black text-[#064B40]">تم تجهيز طلبك بنجاح!</h4>
                 <p className="text-sm text-[#064B40]/80">
-                  تم تحويلك إلى واتساب مصنع حلويات العميد لتأكيد الطلب وموعد التوصيل.
+                  تم تحويلك إلى واتساب حلواني العميد لتأكيد الطلب وموعد التوصيل.
                 </p>
                 <button
                   onClick={() => setIsCartOpen(false)}
@@ -523,7 +523,7 @@ export default function AlAmeedStore() {
           <div className="bg-white w-full max-w-2xl rounded-3xl max-h-[90vh] overflow-y-auto p-6 shadow-2xl border-t-4 border-[#064B40]">
             <div className="flex items-center justify-between pb-4 border-b">
               <h3 className="text-xl font-black text-[#064B40] flex items-center gap-2">
-                <Store className="w-6 h-6 text-[#D5A642]" /> لوحة إدارة مصنع حلويات العميد
+                <Store className="w-6 h-6 text-[#D5A642]" /> لوحة إدارة حلواني العميد
               </h3>
               <button
                 onClick={() => setShowAdminModal(false)}
@@ -691,7 +691,7 @@ export default function AlAmeedStore() {
 
       {/* الفوتر */}
       <footer className="bg-[#064B40] text-[#FFF2D6] py-6 px-4 text-center border-t-2 border-[#D5A642] mt-10">
-        <p className="font-black text-[#D5A642] text-base">مصنع حلويات العميد</p>
+        <p className="font-black text-[#D5A642] text-base">حلواني العميد</p>
         <p className="text-xs text-[#FFF2D6]/80 mt-1">
           الصبرية - شربين - طريق دمياط السريع | للطلبات والاستفسار: 01016552275
         </p>
