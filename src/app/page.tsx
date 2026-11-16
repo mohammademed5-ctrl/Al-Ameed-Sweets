@@ -1,7 +1,7 @@
-'use client';
+حلواني العميد use client';
 
 import React, { useEffect, useState } from 'react';
-import { createClient } from '@supabase/supabase-js';
+import { createClient } from '@supabase/supabase-js'
 import {
   ShoppingBag,
   Phone,
@@ -231,7 +231,7 @@ export default function AlAmeedStore() {
               <h1 className="text-lg md:text-2xl font-black text-[#D5A642] leading-tight">
                 مصنع حلويات العميد
               </h1>
-              <p className="text-xs text-[#FFF2D6]/85">أصل الحلويات الشرقية والنواعم بالسمنة البلدي</p>
+              <p className="text-xs text-[#FFF2D6]/85">ي</p>
             </div>
           </div>
 
