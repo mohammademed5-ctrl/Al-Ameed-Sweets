@@ -58,6 +58,14 @@ export default function AlAmeedStore() {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [loading, setLoading] = useState(true);
 
+  // حالات معاينة وحفظ الصور الجديدة
+  const [selectedLogoFile, setSelectedLogoFile] = useState<File | null>(null);
+  const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const [selectedBannerFile, setSelectedBannerFile] = useState<File | null>(null);
+  const [bannerPreview, setBannerPreview] = useState<string | null>(null);
+  const [productFiles, setProductFiles] = useState<{ [key: string]: File }>({});
+  const [productPreviews, setProductPreviews] = useState<{ [key: string]: string }>({});
+
   // بيانات العميل للطلب
   const [customerName, setCustomerName] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
@@ -79,6 +87,7 @@ export default function AlAmeedStore() {
   const [newProductCat, setNewProductCat] = useState('');
   const [newProductUnit, setNewProductUnit] = useState('كيلو');
   const [newProductFile, setNewProductFile] = useState<File | null>(null);
+  const [newProductPreview, setNewProductPreview] = useState<string | null>(null);
   const [uploadingId, setUploadingId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -130,33 +139,51 @@ export default function AlAmeedStore() {
     return data.publicUrl;
   }
 
-  async function handleUpdateLogo(file: File) {
+  async function handleSaveLogo() {
+    if (!selectedLogoFile) return;
     setUploadingId('logo');
-    const publicUrl = await uploadImageToStorage(file);
+    const publicUrl = await uploadImageToStorage(selectedLogoFile);
     if (publicUrl) {
       await supabase.from('store_settings').upsert({ id: 1, logo_url: publicUrl });
       setLogoUrl(publicUrl);
+      setSelectedLogoFile(null);
+      setLogoPreview(null);
       await fetchStoreData();
     }
     setUploadingId(null);
   }
 
-  async function handleUpdateBanner(file: File) {
+  async function handleSaveBanner() {
+    if (!selectedBannerFile) return;
     setUploadingId('banner');
-    const publicUrl = await uploadImageToStorage(file);
+    const publicUrl = await uploadImageToStorage(selectedBannerFile);
     if (publicUrl) {
       await supabase.from('store_settings').upsert({ id: 1, banner_image_url: publicUrl });
       setBannerUrl(publicUrl);
+      setSelectedBannerFile(null);
+      setBannerPreview(null);
       await fetchStoreData();
     }
     setUploadingId(null);
   }
 
-  async function handleUpdateProductImage(productId: string, file: File) {
+  async function handleSaveProductImage(productId: string) {
+    const file = productFiles[productId];
+    if (!file) return;
     setUploadingId(productId);
     const publicUrl = await uploadImageToStorage(file);
     if (publicUrl) {
       await supabase.from('products').update({ image_url: publicUrl }).eq('id', productId);
+      setProductFiles((prev) => {
+        const copy = { ...prev };
+        delete copy[productId];
+        return copy;
+      });
+      setProductPreviews((prev) => {
+        const copy = { ...prev };
+        delete copy[productId];
+        return copy;
+      });
       await fetchStoreData();
     }
     setUploadingId(null);
@@ -283,6 +310,7 @@ export default function AlAmeedStore() {
     setNewProductName('');
     setNewProductPrice('');
     setNewProductFile(null);
+    setNewProductPreview(null);
     setUploadingId(null);
     fetchStoreData();
   }
@@ -503,424 +531,3 @@ export default function AlAmeedStore() {
                 onClick={() => setIsCartOpen(false)}
                 className="p-1.5 rounded-full bg-white text-[#064B40]"
               >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            {orderSuccess ? (
-              <div className="py-10 text-center space-y-4">
-                <CheckCircle2 className="w-16 h-16 text-green-600 mx-auto" />
-                <h4 className="text-2xl font-black text-[#064B40]">تم تجهيز طلبك بنجاح!</h4>
-                <p className="text-sm text-[#064B40]/80">
-                  تم تحويلك إلى واتساب حلواني العميد لتأكيد الطلب وموعد التوصيل.
-                </p>
-                <button
-                  onClick={() => setIsCartOpen(false)}
-                  className="bg-[#064B40] text-[#D5A642] font-bold px-6 py-2.5 rounded-xl"
-                >
-                  العودة للمتجر
-                </button>
-              </div>
-            ) : cart.length === 0 ? (
-              <div className="py-12 text-center text-[#064B40]/70 font-bold">
-                السلة فارغة حالياً، اختر حلوياتك المفضلة من القائمة.
-              </div>
-            ) : (
-              <div className="space-y-5 mt-4">
-                <div className="space-y-2.5">
-                  {cart.map((item) => (
-                    <div
-                      key={item.product.id}
-                      className="bg-white p-3 rounded-xl flex items-center justify-between shadow-sm"
-                    >
-                      <div>
-                        <p className="font-bold text-sm text-[#064B40]">{item.product.name_ar}</p>
-                        <p className="text-xs text-[#064B40]/70">
-                          {item.product.price} ج.م × {item.quantity} {item.product.unit}
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-black text-sm text-[#064B40]">
-                          {item.product.price * item.quantity} ج.م
-                        </span>
-                        <button
-                          onClick={() => updateQty(item.product.id, -item.quantity)}
-                          className="text-red-500 p-1"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                <div className="bg-[#064B40] text-[#FFF2D6] p-4 rounded-2xl flex items-center justify-between font-black">
-                  <span>الإجمالي الكلي:</span>
-                  <span className="text-xl text-[#D5A642]">{totalAmount} جنيه مصري</span>
-                </div>
-
-                <form onSubmit={handleCheckout} className="space-y-3">
-                  <input
-                    type="text"
-                    required
-                    placeholder="الاسم بالكامل *"
-                    value={customerName}
-                    onChange={(e) => setCustomerName(e.target.value)}
-                    className="w-full bg-white border border-[#064B40]/20 rounded-xl px-4 py-3 text-sm font-semibold focus:outline-none focus:border-[#064B40]"
-                  />
-                  <input
-                    type="tel"
-                    required
-                    placeholder="رقم الموبايل / واتساب *"
-                    value={customerPhone}
-                    onChange={(e) => setCustomerPhone(e.target.value)}
-                    className="w-full bg-white border border-[#064B40]/20 rounded-xl px-4 py-3 text-sm font-semibold focus:outline-none focus:border-[#064B40]"
-                  />
-                  <input
-                    type="text"
-                    required
-                    placeholder="العنوان بالتفصيل للتوصيل *"
-                    value={customerAddress}
-                    onChange={(e) => setCustomerAddress(e.target.value)}
-                    className="w-full bg-white border border-[#064B40]/20 rounded-xl px-4 py-3 text-sm font-semibold focus:outline-none focus:border-[#064B40]"
-                  />
-                  <input
-                    type="text"
-                    placeholder="ملاحظات إضافية (اختياري)"
-                    value={orderNotes}
-                    onChange={(e) => setOrderNotes(e.target.value)}
-                    className="w-full bg-white border border-[#064B40]/20 rounded-xl px-4 py-3 text-sm font-semibold focus:outline-none focus:border-[#064B40]"
-                  />
-                  <button
-                    type="submit"
-                    disabled={submitting}
-                    className="w-full bg-[#25D366] text-white font-black py-3.5 rounded-xl shadow-lg hover:brightness-95 transition text-base"
-                  >
-                    {submitting ? 'جاري إرسال الطلب...' : 'تأكيد وإرسال الطلب عبر واتساب'}
-                  </button>
-                </form>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* نافذة لوحة إدارة المصنع */}
-      {showAdminModal && (
-        <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4">
-          <div className="bg-white w-full max-w-2xl rounded-3xl max-h-[90vh] overflow-y-auto p-6 shadow-2xl border-t-4 border-[#064B40]">
-            <div className="flex items-center justify-between pb-4 border-b">
-              <h3 className="text-xl font-black text-[#064B40] flex items-center gap-2">
-                <Store className="w-6 h-6 text-[#D5A642]" /> لوحة إدارة حلواني العميد
-              </h3>
-              <button
-                onClick={() => setShowAdminModal(false)}
-                className="p-1.5 rounded-full bg-gray-100"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            {!adminUser ? (
-              <form onSubmit={handleAdminLogin} className="space-y-4 mt-6 max-w-sm mx-auto">
-                <p className="text-sm text-center text-gray-600 font-bold">
-                  تسجيل دخول الإدارة لتعديل الأسعار والصور والأصناف
-                </p>
-                {authError && (
-                  <p className="text-xs text-red-600 bg-red-50 p-2.5 rounded-lg text-center font-bold">
-                    {authError}
-                  </p>
-                )}
-                <input
-                  type="email"
-                  required
-                  placeholder="البريد الإلكتروني للإدارة"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full border rounded-xl px-4 py-3 text-sm"
-                />
-                <input
-                  type="password"
-                  required
-                  placeholder="كلمة المرور"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full border rounded-xl px-4 py-3 text-sm"
-                />
-                <button
-                  type="submit"
-                  className="w-full bg-[#064B40] text-[#D5A642] font-black py-3 rounded-xl"
-                >
-                  دخول لوحة الإدارة
-                </button>
-              </form>
-            ) : (
-              <div className="space-y-6 mt-5">
-                <div className="flex items-center justify-between bg-[#FFF2D6] p-3 rounded-xl">
-                  <span className="text-xs font-bold text-[#064B40]">
-                    مرحباً أستاذ محمد عماد ({adminUser.email})
-                  </span>
-                  <button
-                    onClick={async () => {
-                      await supabase.auth.signOut();
-                      setAdminUser(null);
-                    }}
-                    className="flex items-center gap-1 text-xs font-bold text-red-600"
-                  >
-                    <LogOut className="w-4 h-4" /> خروج
-                  </button>
-                </div>
-
-                {/* تغيير لوجو المتجر */}
-                <div className="bg-[#FFF2D6]/60 border border-[#D5A642] p-4 rounded-2xl flex items-center justify-between gap-3">
-                  <div className="flex items-center gap-3">
-                    {logoUrl ? (
-                      <img
-                        src={logoUrl}
-                        alt="اللوجو"
-                        className="w-12 h-12 rounded-full object-cover border-2 border-[#064B40]"
-                      />
-                    ) : (
-                      <div className="w-12 h-12 rounded-full bg-[#064B40] text-[#D5A642] flex items-center justify-center font-black text-lg">
-                        ع
-                      </div>
-                    )}
-                    <div>
-                      <p className="font-black text-sm text-[#064B40]">صورة اللوجو (الشريط العلوي)</p>
-                      <p className="text-xs text-[#064B40]/75">تظهر في أعلى الموقع بجانب الاسم</p>
-                    </div>
-                  </div>
-                  <label className="cursor-pointer bg-[#064B40] text-[#D5A642] font-bold text-xs px-4 py-2.5 rounded-xl flex items-center gap-1.5 shrink-0 hover:brightness-110">
-                    {uploadingId === 'logo' ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : (
-                      <Camera className="w-4 h-4" />
-                    )}
-                    <span>تغيير اللوجو</span>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) handleUpdateLogo(file);
-                      }}
-                    />
-                  </label>
-                </div>
-
-                {/* تغيير صورة البانر الرئيسي */}
-                <div className="bg-[#FFF2D6]/60 border border-[#D5A642] p-4 rounded-2xl flex items-center justify-between gap-3">
-                  <div className="flex items-center gap-3">
-                    {bannerUrl ? (
-                      <img
-                        src={bannerUrl}
-                        alt="البانر"
-                        className="w-16 h-12 rounded-lg object-cover border-2 border-[#064B40]"
-                      />
-                    ) : (
-                      <div className="w-16 h-12 rounded-lg bg-[#064B40] text-[#D5A642] flex items-center justify-center font-bold text-xs">
-                        بدون بانر
-                      </div>
-                    )}
-                    <div>
-                      <p className="font-black text-sm text-[#064B40]">صورة البانر الرئيسي</p>
-                      <p className="text-xs text-[#064B40]/75">تظهر بعرض القسم فوق "من إيد العميد"</p>
-                    </div>
-                  </div>
-                  <label className="cursor-pointer bg-[#064B40] text-[#D5A642] font-bold text-xs px-4 py-2.5 rounded-xl flex items-center gap-1.5 shrink-0 hover:brightness-110">
-                    {uploadingId === 'banner' ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : (
-                      <ImageIcon className="w-4 h-4" />
-                    )}
-                    <span>تغيير البانر</span>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) handleUpdateBanner(file);
-                      }}
-                    />
-                  </label>
-                </div>
-
-                {/* إضافة صنف جديد */}
-                <form onSubmit={handleAddProduct} className="bg-gray-50 p-4 rounded-2xl space-y-3">
-                  <h4 className="font-black text-sm text-[#064B40]">+ إضافة صنف جديد للقائمة</h4>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                    <input
-                      type="text"
-                      required
-                      placeholder="اسم الصنف (مثال: كحك ملبن)"
-                      value={newProductName}
-                      onChange={(e) => setNewProductName(e.target.value)}
-                      className="border rounded-xl px-3 py-2 text-sm bg-white"
-                    />
-                    <input
-                      type="number"
-                      required
-                      placeholder="السعر بالجنيه"
-                      value={newProductPrice}
-                      onChange={(e) => setNewProductPrice(e.target.value)}
-                      className="border rounded-xl px-3 py-2 text-sm bg-white"
-                    />
-                    <select
-                      value={newProductCat}
-                      onChange={(e) => setNewProductCat(e.target.value)}
-                      className="border rounded-xl px-3 py-2 text-sm bg-white"
-                    >
-                      {categories.map((c) => (
-                        <option key={c.id} value={c.id}>
-                          {c.name_ar}
-                        </option>
-                      ))}
-                    </select>
-                    <input
-                      type="text"
-                      placeholder="الوحدة (كيلو / علبة / قطعة)"
-                      value={newProductUnit}
-                      onChange={(e) => setNewProductUnit(e.target.value)}
-                      className="border rounded-xl px-3 py-2 text-sm bg-white"
-                    />
-                  </div>
-
-                  <div className="flex items-center justify-between gap-2 pt-1">
-                    <label className="flex items-center gap-2 cursor-pointer bg-white border border-dashed border-[#064B40]/40 px-3 py-2 rounded-xl text-xs font-bold text-[#064B40] hover:bg-[#FFF2D6]">
-                      <Camera className="w-4 h-4 text-[#D5A642]" />
-                      <span>{newProductFile ? newProductFile.name : 'اختر صورة الصنف (اختياري)'}</span>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        onChange={(e) => setNewProductFile(e.target.files?.[0] || null)}
-                      />
-                    </label>
-
-                    <button
-                      type="submit"
-                      disabled={uploadingId === 'new'}
-                      className="bg-[#064B40] text-[#D5A642] font-bold text-xs px-5 py-2.5 rounded-xl flex items-center gap-1.5"
-                    >
-                      {uploadingId === 'new' && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-                      حفظ وإضافة الصنف
-                    </button>
-                  </div>
-                </form>
-
-                {/* تعديل الأسعار والصور الحالية */}
-                <div className="space-y-2 max-h-80 overflow-y-auto">
-                  <h4 className="font-black text-sm text-[#064B40]">تعديل الأسعار والصور والتوافر:</h4>
-                  {products.map((p) => (
-                    <div
-                      key={p.id}
-                      className="flex items-center justify-between border p-2.5 rounded-xl text-sm gap-2"
-                    >
-                      <div className="flex items-center gap-2.5 min-w-0">
-                        {p.image_url ? (
-                          <img
-                            src={p.image_url}
-                            alt={p.name_ar}
-                            className="w-10 h-10 rounded-lg object-cover border shrink-0"
-                          />
-                        ) : (
-                          <div className="w-10 h-10 rounded-lg bg-[#FFF2D6] flex items-center justify-center text-xs font-bold text-[#064B40]/50 shrink-0">
-                            بدون
-                          </div>
-                        )}
-                        <span className="font-bold truncate">{p.name_ar}</span>
-                      </div>
-
-                      <div className="flex items-center gap-1.5 shrink-0">
-                        <label
-                          className="cursor-pointer p-1.5 rounded-lg bg-[#FFF2D6] text-[#064B40] hover:bg-[#D5A642]"
-                          title="رفع أو تغيير صورة الصنف"
-                        >
-                          {uploadingId === p.id ? (
-                            <Loader2 className="w-4 h-4 animate-spin" />
-                          ) : (
-                            <Camera className="w-4 h-4" />
-                          )}
-                          <input
-                            type="file"
-                            accept="image/*"
-                            className="hidden"
-                            onChange={(e) => {
-                              const file = e.target.files?.[0];
-                              if (file) handleUpdateProductImage(p.id, file);
-                            }}
-                          />
-                        </label>
-
-                        {editingProductId === p.id ? (
-                          <>
-                            <input
-                              type="number"
-                              value={editPrice}
-                              onChange={(e) => setEditPrice(e.target.value)}
-                              className="w-16 border rounded-lg px-1.5 py-1 text-center font-bold"
-                            />
-                            <button
-                              onClick={() => handleSavePrice(p.id)}
-                              className="bg-green-600 text-white p-1.5 rounded-lg"
-                            >
-                              <Save className="w-4 h-4" />
-                            </button>
-                          </>
-                        ) : (
-                          <>
-                            <span className="font-black text-[#064B40] text-xs sm:text-sm">
-                              {p.price} ج.م
-                            </span>
-                            <button
-                              onClick={() => {
-                                setEditingProductId(p.id);
-                                setEditPrice(String(p.price));
-                              }}
-                              className="text-blue-600 p-1"
-                            >
-                              <Edit3 className="w-4 h-4" />
-                            </button>
-                          </>
-                        )}
-
-                        <button
-                          onClick={() => toggleAvailability(p)}
-                          className={`text-xs px-2 py-1 rounded-lg font-bold ${
-                            p.is_available
-                              ? 'bg-green-100 text-green-800'
-                              : 'bg-red-100 text-red-700'
-                          }`}
-                        >
-                          {p.is_available ? 'متوفر' : 'نفد'}
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-      </footer>
-
-      {/* الفوتر */}
-      <footer className="bg-[#064B40] text-[#FFF2D6] py-6 px-4 text-center border-t-2 border-[#D5A642] mt-10 space-y-2">
-        <p className="font-black text-[#D5A642] text-base">حلواني العميد</p>
-        <p className="text-xs text-[#FFF2D6]/80">
-          الصبرية - شربين - طريق دمياط السريع | للطلبات والاستفسار: 01016552275
-        </p>
-        <div className="pt-2">
-          <button
-            onClick={() => setShowAdminModal(true)}
-            className="inline-flex items-center gap-1.5 text-xs text-[#D5A642]/80 hover:text-[#D5A642] bg-[#04362E] px-3 py-1.5 rounded-lg border border-[#D5A642]/30 transition"
-          >
-            <Lock className="w-3.5 h-3.5" /> إدارة الموقع
-          </button>
-        </div>
-      </footer>
-    </div>
-  );
-}
