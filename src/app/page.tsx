@@ -19,6 +19,7 @@ import {
   X,
   Camera,
   Loader2,
+  Image as ImageIcon,
 } from 'lucide-react';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://ckrfnznzjfmdynjfnxie.supabase.co';
@@ -50,6 +51,8 @@ interface CartItem {
 export default function AlAmeedStore() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
+  const [logoUrl, setLogoUrl] = useState<string | null>(null);
+  const [bannerUrl, setBannerUrl] = useState<string | null>(null);
   const [selectedCat, setSelectedCat] = useState<string>('all');
   const [cart, setCart] = useState<CartItem[]>([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
@@ -92,9 +95,10 @@ export default function AlAmeedStore() {
 
   async function fetchStoreData() {
     setLoading(true);
-    const [catRes, prodRes] = await Promise.all([
+    const [catRes, prodRes, settingsRes] = await Promise.all([
       supabase.from('categories').select('*').order('name_ar'),
       supabase.from('products').select('*').order('name_ar'),
+      supabase.from('store_settings').select('logo_url, banner_image_url').eq('id', 1).maybeSingle(),
     ]);
     if (catRes.data) {
       setCategories(catRes.data);
@@ -103,6 +107,10 @@ export default function AlAmeedStore() {
       }
     }
     if (prodRes.data) setProducts(prodRes.data);
+    if (settingsRes.data) {
+      if (settingsRes.data.logo_url) setLogoUrl(settingsRes.data.logo_url);
+      if (settingsRes.data.banner_image_url) setBannerUrl(settingsRes.data.banner_image_url);
+    }
     setLoading(false);
   }
 
@@ -120,6 +128,26 @@ export default function AlAmeedStore() {
 
     const { data } = supabase.storage.from('product-images').getPublicUrl(fileName);
     return data.publicUrl;
+  }
+
+  async function handleUpdateLogo(file: File) {
+    setUploadingId('logo');
+    const publicUrl = await uploadImageToStorage(file);
+    if (publicUrl) {
+      await supabase.from('store_settings').update({ logo_url: publicUrl }).eq('id', 1);
+      setLogoUrl(publicUrl);
+    }
+    setUploadingId(null);
+  }
+
+  async function handleUpdateBanner(file: File) {
+    setUploadingId('banner');
+    const publicUrl = await uploadImageToStorage(file);
+    if (publicUrl) {
+      await supabase.from('store_settings').update({ banner_image_url: publicUrl }).eq('id', 1);
+      setBannerUrl(publicUrl);
+    }
+    setUploadingId(null);
   }
 
   async function handleUpdateProductImage(productId: string, file: File) {
@@ -266,9 +294,17 @@ export default function AlAmeedStore() {
       <header className="sticky top-0 z-40 bg-[#064B40] text-[#FFF2D6] shadow-lg border-b-2 border-[#D5A642]">
         <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-full bg-[#D5A642] text-[#064B40] flex items-center justify-center font-black text-xl shadow">
-              ع
-            </div>
+            {logoUrl ? (
+              <img
+                src={logoUrl}
+                alt="حلواني العميد"
+                className="w-12 h-12 rounded-full object-cover border-2 border-[#D5A642] shadow"
+              />
+            ) : (
+              <div className="w-11 h-11 rounded-full bg-[#D5A642] text-[#064B40] flex items-center justify-center font-black text-xl shadow">
+                ع
+              </div>
+            )}
             <div>
               <h1 className="text-lg md:text-2xl font-black text-[#D5A642] leading-tight">
                 حلواني العميد
@@ -300,6 +336,13 @@ export default function AlAmeedStore() {
           <span className="inline-flex items-center gap-1.5 bg-[#D5A642]/20 border border-[#D5A642] text-[#D5A642] px-4 py-1 rounded-full text-xs font-bold">
             <Sparkles className="w-4 h-4" /> طازج يومياً من مصنعنا إليك مباشرة
           </span>
+
+          {bannerUrl && (
+            <div className="w-full h-56 sm:h-72 rounded-2xl overflow-hidden border-2 border-[#D5A642] shadow-2xl my-3">
+              <img src={bannerUrl} alt="بانر حلواني العميد" className="w-full h-full object-cover" />
+            </div>
+          )}
+
           <h2 className="text-3xl md:text-5xl font-black text-[#FFF2D6] leading-snug">
             من إيد العميد <span className="text-[#D5A642]">الحلو أكيد</span>
           </h2>
@@ -626,6 +669,82 @@ export default function AlAmeedStore() {
                   </button>
                 </div>
 
+                {/* تغيير لوجو المتجر */}
+                <div className="bg-[#FFF2D6]/60 border border-[#D5A642] p-4 rounded-2xl flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    {logoUrl ? (
+                      <img
+                        src={logoUrl}
+                        alt="اللوجو"
+                        className="w-12 h-12 rounded-full object-cover border-2 border-[#064B40]"
+                      />
+                    ) : (
+                      <div className="w-12 h-12 rounded-full bg-[#064B40] text-[#D5A642] flex items-center justify-center font-black text-lg">
+                        ع
+                      </div>
+                    )}
+                    <div>
+                      <p className="font-black text-sm text-[#064B40]">صورة اللوجو (الشريط العلوي)</p>
+                      <p className="text-xs text-[#064B40]/75">تظهر في أعلى الموقع بجانب الاسم</p>
+                    </div>
+                  </div>
+                  <label className="cursor-pointer bg-[#064B40] text-[#D5A642] font-bold text-xs px-4 py-2.5 rounded-xl flex items-center gap-1.5 shrink-0 hover:brightness-110">
+                    {uploadingId === 'logo' ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Camera className="w-4 h-4" />
+                    )}
+                    <span>تغيير اللوجو</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) handleUpdateLogo(file);
+                      }}
+                    />
+                  </label>
+                </div>
+
+                {/* تغيير صورة البانر الرئيسي */}
+                <div className="bg-[#FFF2D6]/60 border border-[#D5A642] p-4 rounded-2xl flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    {bannerUrl ? (
+                      <img
+                        src={bannerUrl}
+                        alt="البانر"
+                        className="w-16 h-12 rounded-lg object-cover border-2 border-[#064B40]"
+                      />
+                    ) : (
+                      <div className="w-16 h-12 rounded-lg bg-[#064B40] text-[#D5A642] flex items-center justify-center font-bold text-xs">
+                        بدون بانر
+                      </div>
+                    )}
+                    <div>
+                      <p className="font-black text-sm text-[#064B40]">صورة البانر الرئيسي</p>
+                      <p className="text-xs text-[#064B40]/75">تظهر بعرض القسم فوق "من إيد العميد"</p>
+                    </div>
+                  </div>
+                  <label className="cursor-pointer bg-[#064B40] text-[#D5A642] font-bold text-xs px-4 py-2.5 rounded-xl flex items-center gap-1.5 shrink-0 hover:brightness-110">
+                    {uploadingId === 'banner' ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <ImageIcon className="w-4 h-4" />
+                    )}
+                    <span>تغيير البانر</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) handleUpdateBanner(file);
+                      }}
+                    />
+                  </label>
+                </div>
+
                 {/* إضافة صنف جديد */}
                 <form onSubmit={handleAddProduct} className="bg-gray-50 p-4 rounded-2xl space-y-3">
                   <h4 className="font-black text-sm text-[#064B40]">+ إضافة صنف جديد للقائمة</h4>
@@ -713,7 +832,6 @@ export default function AlAmeedStore() {
                       </div>
 
                       <div className="flex items-center gap-1.5 shrink-0">
-                        {/* زر رفع/تغيير صورة الصنف */}
                         <label
                           className="cursor-pointer p-1.5 rounded-lg bg-[#FFF2D6] text-[#064B40] hover:bg-[#D5A642]"
                           title="رفع أو تغيير صورة الصنف"
