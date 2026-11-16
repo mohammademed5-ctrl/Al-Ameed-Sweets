@@ -1,30 +1,41 @@
-  async function handleSaveProductImage(productId: string) {
-    const file = productFiles[productId];
-    if (!file) return;
-    setUploadingId(productId);
-    const publicUrl = await uploadImageToStorage(file);
-    if (publicUrl) {
-      const { error } = await supabase
-        .from('products')
-        .update({ image_url: publicUrl })
-        .eq('id', productId);
+import type { Metadata } from 'next';
+import './globals.css';
 
-      if (error) {
-        alert('خطأ في حفظ صورة الصنف بقاعدة البيانات: ' + error.message);
-      } else {
-        setProductFiles((prev) => {
-          const copy = { ...prev };
-          delete copy[productId];
-          return copy;
-        });
-        setProductPreviews((prev) => {
-          const copy = { ...prev };
-          delete copy[productId];
-          return copy;
-        });
-        await fetchStoreData();
-        alert('تم تحديث صورة الصنف وحفظها بنجاح!');
-      }
-    }
-    setUploadingId(null);
-  }
+export const metadata: Metadata = {
+  title: 'حلواني العميد | من إيد العميد الحلو أكيد',
+  description: 'كحك ناعم، بسكويت فاخر، بيتي فور، غريبة، وأجود الحلويات الشرقية.',
+  openGraph: {
+    title: 'حلواني العميد | من إيد العميد الحلو أكيد',
+    description: 'كحك ناعم، بسكويت فاخر، وأجود الحلويات الشرقية المصنوعة بأجود أنواع السمنة البلدي.',
+    url: 'https://al-ameed-sweets.vercel.app',
+    siteName: 'حلواني العميد',
+    images: [
+      {
+        url: 'رابط_صورة_اللوجو_أو_البانر_هنا', // استبدل دي برابط الصورة المباشر من سوبابيس
+        width: 1200,
+        height: 630,
+        alt: 'حلواني العميد',
+      },
+    ],
+    locale: 'ar_EG',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'حلواني العميد',
+    description: 'من إيد العميد الحلو أكيد',
+    images: ['رابط_صورة_اللوجو_أو_البانر_هنا'],
+  },
+};
+
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <html lang="ar" dir="rtl">
+      <body>{children}</body>
+    </html>
+  );
+}
