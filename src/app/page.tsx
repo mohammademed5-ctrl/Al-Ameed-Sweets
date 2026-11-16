@@ -17,6 +17,8 @@ import {
   Edit3,
   Save,
   X,
+  Camera,
+  Loader2,
 } from 'lucide-react';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://ckrfnznzjfmdynjfnxie.supabase.co';
@@ -37,6 +39,7 @@ interface Product {
   price: number;
   unit: string;
   is_available: boolean;
+  image_url?: string | null;
 }
 
 interface CartItem {
@@ -72,6 +75,8 @@ export default function AlAmeedStore() {
   const [newProductPrice, setNewProductPrice] = useState('');
   const [newProductCat, setNewProductCat] = useState('');
   const [newProductUnit, setNewProductUnit] = useState('كيلو');
+  const [newProductFile, setNewProductFile] = useState<File | null>(null);
+  const [uploadingId, setUploadingId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchStoreData();
@@ -99,6 +104,32 @@ export default function AlAmeedStore() {
     }
     if (prodRes.data) setProducts(prodRes.data);
     setLoading(false);
+  }
+
+  async function uploadImageToStorage(file: File): Promise<string | null> {
+    const fileExt = file.name.split('.').pop() || 'jpg';
+    const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 8)}.${fileExt}`;
+    const { error } = await supabase.storage
+      .from('product-images')
+      .upload(fileName, file, { upsert: true });
+
+    if (error) {
+      alert('حدث خطأ أثناء رفع الصورة: ' + error.message);
+      return null;
+    }
+
+    const { data } = supabase.storage.from('product-images').getPublicUrl(fileName);
+    return data.publicUrl;
+  }
+
+  async function handleUpdateProductImage(productId: string, file: File) {
+    setUploadingId(productId);
+    const publicUrl = await uploadImageToStorage(file);
+    if (publicUrl) {
+      await supabase.from('products').update({ image_url: publicUrl }).eq('id', productId);
+      await fetchStoreData();
+    }
+    setUploadingId(null);
   }
 
   function addToCart(product: Product) {
@@ -201,6 +232,13 @@ export default function AlAmeedStore() {
   async function handleAddProduct(e: React.FormEvent) {
     e.preventDefault();
     if (!newProductName || !newProductPrice || !newProductCat) return;
+    setUploadingId('new');
+
+    let uploadedUrl: string | null = null;
+    if (newProductFile) {
+      uploadedUrl = await uploadImageToStorage(newProductFile);
+    }
+
     await supabase.from('products').insert([
       {
         name_ar: newProductName,
@@ -208,10 +246,14 @@ export default function AlAmeedStore() {
         category_id: newProductCat,
         unit: newProductUnit,
         is_available: true,
+        image_url: uploadedUrl,
       },
     ]);
+
     setNewProductName('');
     setNewProductPrice('');
+    setNewProductFile(null);
+    setUploadingId(null);
     fetchStoreData();
   }
 
@@ -231,35 +273,24 @@ export default function AlAmeedStore() {
               <h1 className="text-lg md:text-2xl font-black text-[#D5A642] leading-tight">
                 حلواني العميد
               </h1>
-              <p className="text-xs text-[#FFF2D6]/85">أصل الكحك والبسكويت من مصنع العميد</p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setShowAdminModal(true)}
-              className="p-2 rounded-xl bg-[#04362E] text-[#D5A642] hover:bg-[#D5A642] hover:text-[#064B40] transition"
-              title="لوحة إدارة المصنع"
-            >
-              <Lock className="w-5 h-5" />
-            </button>
-
-            <button
-              onClick={() => {
-                setOrderSuccess(false);
-                setIsCartOpen(true);
-              }}
-              className="relative flex items-center gap-2 bg-[#D5A642] text-[#064B40] font-extrabold px-4 py-2 rounded-xl shadow hover:brightness-105 transition"
-            >
-              <ShoppingBag className="w-5 h-5" />
-              <span className="text-sm">السلة</span>
-              {totalItemsCount > 0 && (
-                <span className="bg-[#064B40] text-[#D5A642] text-xs font-black px-2 py-0.5 rounded-full">
-                  {totalItemsCount}
-                </span>
-              )}
-            </button>
-          </div>
+          <button
+            onClick={() => {
+              setOrderSuccess(false);
+              setIsCartOpen(true);
+            }}
+            className="relative flex items-center gap-2 bg-[#D5A642] text-[#064B40] font-extrabold px-4 py-2 rounded-xl shadow hover:brightness-105 transition"
+          >
+            <ShoppingBag className="w-5 h-5" />
+            <span className="text-sm">السلة</span>
+            {totalItemsCount > 0 && (
+              <span className="bg-[#064B40] text-[#D5A642] text-xs font-black px-2 py-0.5 rounded-full">
+                {totalItemsCount}
+              </span>
+            )}
+          </button>
         </div>
       </header>
 
@@ -326,21 +357,33 @@ export default function AlAmeedStore() {
               return (
                 <div
                   key={product.id}
-                  className="bg-white rounded-2xl p-5 shadow-sm border border-[#D5A642]/40 flex flex-col justify-between hover:shadow-md transition"
+                  className="bg-white rounded-2xl overflow-hidden shadow-sm border border-[#D5A642]/40 flex flex-col justify-between hover:shadow-md transition"
                 >
                   <div>
-                    <div className="flex items-start justify-between gap-2 mb-2">
-                      <h3 className="text-lg font-black text-[#064B40]">{product.name_ar}</h3>
-                      <span className="bg-[#FFF2D6] text-[#064B40] border border-[#D5A642] text-xs font-extrabold px-2.5 py-1 rounded-lg whitespace-nowrap">
-                        {product.unit}
-                      </span>
-                    </div>
-                    {product.description_ar && (
-                      <p className="text-xs text-[#064B40]/75 mb-4">{product.description_ar}</p>
+                    {product.image_url && (
+                      <div className="w-full h-48 bg-[#FFF2D6]/50 overflow-hidden">
+                        <img
+                          src={product.image_url}
+                          alt={product.name_ar}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
                     )}
+
+                    <div className="p-5 pb-2">
+                      <div className="flex items-start justify-between gap-2 mb-2">
+                        <h3 className="text-lg font-black text-[#064B40]">{product.name_ar}</h3>
+                        <span className="bg-[#FFF2D6] text-[#064B40] border border-[#D5A642] text-xs font-extrabold px-2.5 py-1 rounded-lg whitespace-nowrap">
+                          {product.unit}
+                        </span>
+                      </div>
+                      {product.description_ar && (
+                        <p className="text-xs text-[#064B40]/75 mb-2">{product.description_ar}</p>
+                      )}
+                    </div>
                   </div>
 
-                  <div className="pt-3 border-t border-[#FFF2D6] flex items-center justify-between">
+                  <div className="px-5 pb-5 pt-3 border-t border-[#FFF2D6] flex items-center justify-between">
                     <div>
                       <span className="text-2xl font-black text-[#064B40]">{product.price}</span>
                       <span className="text-xs font-bold text-[#064B40]/80 mr-1">ج.م</span>
@@ -536,7 +579,7 @@ export default function AlAmeedStore() {
             {!adminUser ? (
               <form onSubmit={handleAdminLogin} className="space-y-4 mt-6 max-w-sm mx-auto">
                 <p className="text-sm text-center text-gray-600 font-bold">
-                  تسجيل دخول الإدارة لتعديل الأسعار والأصناف
+                  تسجيل دخول الإدارة لتعديل الأسعار والصور والأصناف
                 </p>
                 {authError && (
                   <p className="text-xs text-red-600 bg-red-50 p-2.5 rounded-lg text-center font-bold">
@@ -622,31 +665,82 @@ export default function AlAmeedStore() {
                       className="border rounded-xl px-3 py-2 text-sm bg-white"
                     />
                   </div>
-                  <button
-                    type="submit"
-                    className="bg-[#064B40] text-[#D5A642] font-bold text-xs px-5 py-2.5 rounded-xl"
-                  >
-                    حفظ وإضافة الصنف
-                  </button>
+
+                  <div className="flex items-center justify-between gap-2 pt-1">
+                    <label className="flex items-center gap-2 cursor-pointer bg-white border border-dashed border-[#064B40]/40 px-3 py-2 rounded-xl text-xs font-bold text-[#064B40] hover:bg-[#FFF2D6]">
+                      <Camera className="w-4 h-4 text-[#D5A642]" />
+                      <span>{newProductFile ? newProductFile.name : 'اختر صورة الصنف (اختياري)'}</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => setNewProductFile(e.target.files?.[0] || null)}
+                      />
+                    </label>
+
+                    <button
+                      type="submit"
+                      disabled={uploadingId === 'new'}
+                      className="bg-[#064B40] text-[#D5A642] font-bold text-xs px-5 py-2.5 rounded-xl flex items-center gap-1.5"
+                    >
+                      {uploadingId === 'new' && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                      حفظ وإضافة الصنف
+                    </button>
+                  </div>
                 </form>
 
-                {/* تعديل الأسعار الحالية */}
-                <div className="space-y-2 max-h-72 overflow-y-auto">
-                  <h4 className="font-black text-sm text-[#064B40]">تعديل الأسعار والتوافر:</h4>
+                {/* تعديل الأسعار والصور الحالية */}
+                <div className="space-y-2 max-h-80 overflow-y-auto">
+                  <h4 className="font-black text-sm text-[#064B40]">تعديل الأسعار والصور والتوافر:</h4>
                   {products.map((p) => (
                     <div
                       key={p.id}
-                      className="flex items-center justify-between border p-2.5 rounded-xl text-sm"
+                      className="flex items-center justify-between border p-2.5 rounded-xl text-sm gap-2"
                     >
-                      <span className="font-bold">{p.name_ar}</span>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        {p.image_url ? (
+                          <img
+                            src={p.image_url}
+                            alt={p.name_ar}
+                            className="w-10 h-10 rounded-lg object-cover border shrink-0"
+                          />
+                        ) : (
+                          <div className="w-10 h-10 rounded-lg bg-[#FFF2D6] flex items-center justify-center text-xs font-bold text-[#064B40]/50 shrink-0">
+                            بدون
+                          </div>
+                        )}
+                        <span className="font-bold truncate">{p.name_ar}</span>
+                      </div>
+
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        {/* زر رفع/تغيير صورة الصنف */}
+                        <label
+                          className="cursor-pointer p-1.5 rounded-lg bg-[#FFF2D6] text-[#064B40] hover:bg-[#D5A642]"
+                          title="رفع أو تغيير صورة الصنف"
+                        >
+                          {uploadingId === p.id ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <Camera className="w-4 h-4" />
+                          )}
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) handleUpdateProductImage(p.id, file);
+                            }}
+                          />
+                        </label>
+
                         {editingProductId === p.id ? (
                           <>
                             <input
                               type="number"
                               value={editPrice}
                               onChange={(e) => setEditPrice(e.target.value)}
-                              className="w-20 border rounded-lg px-2 py-1 text-center font-bold"
+                              className="w-16 border rounded-lg px-1.5 py-1 text-center font-bold"
                             />
                             <button
                               onClick={() => handleSavePrice(p.id)}
@@ -657,7 +751,9 @@ export default function AlAmeedStore() {
                           </>
                         ) : (
                           <>
-                            <span className="font-black text-[#064B40]">{p.price} ج.م</span>
+                            <span className="font-black text-[#064B40] text-xs sm:text-sm">
+                              {p.price} ج.م
+                            </span>
                             <button
                               onClick={() => {
                                 setEditingProductId(p.id);
@@ -669,6 +765,7 @@ export default function AlAmeedStore() {
                             </button>
                           </>
                         )}
+
                         <button
                           onClick={() => toggleAvailability(p)}
                           className={`text-xs px-2 py-1 rounded-lg font-bold ${
@@ -690,11 +787,19 @@ export default function AlAmeedStore() {
       )}
 
       {/* الفوتر */}
-      <footer className="bg-[#064B40] text-[#FFF2D6] py-6 px-4 text-center border-t-2 border-[#D5A642] mt-10">
+      <footer className="bg-[#064B40] text-[#FFF2D6] py-6 px-4 text-center border-t-2 border-[#D5A642] mt-10 space-y-2">
         <p className="font-black text-[#D5A642] text-base">حلواني العميد</p>
-        <p className="text-xs text-[#FFF2D6]/80 mt-1">
+        <p className="text-xs text-[#FFF2D6]/80">
           الصبرية - شربين - طريق دمياط السريع | للطلبات والاستفسار: 01016552275
         </p>
+        <div className="pt-2">
+          <button
+            onClick={() => setShowAdminModal(true)}
+            className="inline-flex items-center gap-1.5 text-xs text-[#D5A642]/80 hover:text-[#D5A642] bg-[#04362E] px-3 py-1.5 rounded-lg border border-[#D5A642]/30 transition"
+          >
+            <Lock className="w-3.5 h-3.5" /> إدارة الموقع
+          </button>
+        </div>
       </footer>
     </div>
   );
