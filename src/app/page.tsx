@@ -355,9 +355,9 @@ export default function AlAmeedStore() {
     selectedCat === 'all' ? products : products.filter((p) => p.category_id === selectedCat);
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#FFF2D6] text-[#064B40]">
+    <div className="min-h-screen flex flex-col bg-[#042821] text-[#FFF2D6]">
       {/* الشريط العلوي */}
-      <header className="sticky top-0 z-40 bg-[#064B40] text-[#FFF2D6] shadow-lg border-b-2 border-[#D5A642]">
+      <header className="sticky top-0 z-40 bg-[#021B17] text-[#FFF2D6] shadow-xl border-b-2 border-[#D5A642]">
         <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
             {logoUrl ? (
@@ -367,7 +367,7 @@ export default function AlAmeedStore() {
                 className="w-12 h-12 rounded-full object-cover border-2 border-[#D5A642] shadow"
               />
             ) : (
-              <div className="w-11 h-11 rounded-full bg-[#D5A642] text-[#064B40] flex items-center justify-center font-black text-xl shadow">
+              <div className="w-11 h-11 rounded-full bg-[#D5A642] text-[#042821] flex items-center justify-center font-black text-xl shadow">
                 ع
               </div>
             )}
@@ -383,12 +383,12 @@ export default function AlAmeedStore() {
               setOrderSuccess(false);
               setIsCartOpen(true);
             }}
-            className="relative flex items-center gap-2 bg-[#D5A642] text-[#064B40] font-extrabold px-4 py-2 rounded-xl shadow hover:brightness-105 transition"
+            className="relative flex items-center gap-2 bg-[#D5A642] text-[#042821] font-extrabold px-4 py-2 rounded-xl shadow hover:brightness-105 transition"
           >
             <ShoppingBag className="w-5 h-5" />
             <span className="text-sm">السلة</span>
             {totalItemsCount > 0 && (
-              <span className="bg-[#064B40] text-[#D5A642] text-xs font-black px-2 py-0.5 rounded-full">
+              <span className="bg-[#042821] text-[#D5A642] text-xs font-black px-2 py-0.5 rounded-full">
                 {totalItemsCount}
               </span>
             )}
@@ -396,10 +396,10 @@ export default function AlAmeedStore() {
         </div>
       </header>
 
-      {/* البانر المتحرك (Slider) */}
-      <section className="bg-gradient-to-b from-[#064B40] to-[#085E50] text-[#FFF2D6] py-8 px-4 border-b-4 border-[#D5A642]">
+      {/* البانر المتحرك (Slider) بتصميم فخم ومستوحى من الثيم الأخير */}
+      <section className="bg-gradient-to-b from-[#021B17] via-[#04362E] to-[#042821] text-[#FFF2D6] py-8 px-4 border-b-4 border-[#D5A642]">
         <div className="max-w-4xl mx-auto text-center space-y-4">
-          <span className="inline-flex items-center gap-1.5 bg-[#D5A642]/20 border border-[#D5A642] text-[#D5A642] px-4 py-1 rounded-full text-xs font-bold">
+          <span className="inline-flex items-center gap-1.5 bg-[#D5A642]/20 border border-[#D5A642] text-[#D5A642] px-4 py-1 rounded-full text-xs font-bold shadow">
             <Sparkles className="w-4 h-4" /> طازج يومياً من مصنعنا إليك مباشرة
           </span>
 
@@ -412,7 +412,6 @@ export default function AlAmeedStore() {
                 className="w-full h-full object-cover transition-all duration-700"
               />
 
-              {/* أزرار التنقل يمين ويسار لو فيه أكتر من بانر */}
               {banners.length > 1 && (
                 <>
                   <button
@@ -428,7 +427,6 @@ export default function AlAmeedStore() {
                     <ChevronRight className="w-5 h-5" />
                   </button>
 
-                  {/* نقاط مؤشر السلايدر */}
                   <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5">
                     {banners.map((_, idx) => (
                       <button
@@ -444,12 +442,12 @@ export default function AlAmeedStore() {
               )}
             </div>
           ) : (
-            <div className="w-full h-44 rounded-2xl bg-[#04362E] border-2 border-[#D5A642]/40 flex items-center justify-center text-[#D5A642] font-bold text-sm">
+            <div className="w-full h-44 rounded-2xl bg-[#021B17] border-2 border-[#D5A642]/40 flex items-center justify-center text-[#D5A642] font-bold text-sm">
               أضف بانرات متحركة من لوحة الإدارة
             </div>
           )}
 
-          <h2 className="text-3xl md:text-5xl font-black text-[#FFF2D6] leading-snug">
+          <h2 className="text-3xl md:text-5xl font-black text-[#FFF2D6] leading-snug drop-shadow-md">
             من إيد العميد <span className="text-[#D5A642]">الحلو أكيد</span>
           </h2>
           <p className="text-sm md:text-base text-[#FFF2D6]/90 max-w-2xl mx-auto">
@@ -471,10 +469,10 @@ export default function AlAmeedStore() {
         <div className="flex items-center gap-2 overflow-x-auto pb-4 mb-6">
           <button
             onClick={() => setSelectedCat('all')}
-            className={`px-5 py-2.5 rounded-full font-bold text-sm whitespace-nowrap transition ${
+            className={`px-5 py-2.5 rounded-full font-bold text-sm whitespace-nowrap transition shadow ${
               selectedCat === 'all'
-                ? 'bg-[#064B40] text-[#D5A642] shadow-md'
-                : 'bg-white text-[#064B40] border border-[#064B40]/20'
+                ? 'bg-[#D5A642] text-[#042821]'
+                : 'bg-[#021B17] text-[#FFF2D6] border border-[#D5A642]/30'
             }`}
           >
             جميع الأصناف
@@ -483,10 +481,10 @@ export default function AlAmeedStore() {
             <button
               key={cat.id}
               onClick={() => setSelectedCat(cat.id)}
-              className={`px-5 py-2.5 rounded-full font-bold text-sm whitespace-nowrap transition ${
+              className={`px-5 py-2.5 rounded-full font-bold text-sm whitespace-nowrap transition shadow ${
                 selectedCat === cat.id
-                  ? 'bg-[#064B40] text-[#D5A642] shadow-md'
-                  : 'bg-white text-[#064B40] border border-[#064B40]/20'
+                  ? 'bg-[#D5A642] text-[#042821]'
+                  : 'bg-[#021B17] text-[#FFF2D6] border border-[#D5A642]/30'
               }`}
             >
               {cat.name_ar}
@@ -496,7 +494,7 @@ export default function AlAmeedStore() {
 
         {/* قائمة المنتجات */}
         {loading ? (
-          <div className="text-center py-16 font-bold text-lg text-[#064B40]">
+          <div className="text-center py-16 font-bold text-lg text-[#D5A642]">
             جاري تحميل قائمة حلواني العميد...
           </div>
         ) : (
@@ -506,11 +504,11 @@ export default function AlAmeedStore() {
               return (
                 <div
                   key={product.id}
-                  className="bg-white rounded-2xl overflow-hidden shadow-sm border border-[#D5A642]/40 flex flex-col justify-between hover:shadow-md transition"
+                  className="bg-[#021B17] rounded-2xl overflow-hidden shadow-lg border border-[#D5A642]/40 flex flex-col justify-between hover:border-[#D5A642] transition"
                 >
                   <div>
                     {product.image_url && (
-                      <div className="w-full h-48 bg-[#FFF2D6]/50 overflow-hidden">
+                      <div className="w-full h-48 bg-[#042821] overflow-hidden">
                         <img
                           src={product.image_url}
                           alt={product.name_ar}
@@ -521,32 +519,32 @@ export default function AlAmeedStore() {
 
                     <div className="p-5 pb-2">
                       <div className="flex items-start justify-between gap-2 mb-2">
-                        <h3 className="text-lg font-black text-[#064B40]">{product.name_ar}</h3>
-                        <span className="bg-[#FFF2D6] text-[#064B40] border border-[#D5A642] text-xs font-extrabold px-2.5 py-1 rounded-lg whitespace-nowrap">
+                        <h3 className="text-lg font-black text-[#FFF2D6]">{product.name_ar}</h3>
+                        <span className="bg-[#042821] text-[#D5A642] border border-[#D5A642]/50 text-xs font-extrabold px-2.5 py-1 rounded-lg whitespace-nowrap">
                           {product.unit}
                         </span>
                       </div>
                       {product.description_ar && (
-                        <p className="text-xs text-[#064B40]/75 mb-2">{product.description_ar}</p>
+                        <p className="text-xs text-[#FFF2D6]/75 mb-2">{product.description_ar}</p>
                       )}
                     </div>
                   </div>
 
-                  <div className="px-5 pb-5 pt-3 border-t border-[#FFF2D6] flex items-center justify-between">
+                  <div className="px-5 pb-5 pt-3 border-t border-[#042821] flex items-center justify-between">
                     <div>
-                      <span className="text-2xl font-black text-[#064B40]">{product.price}</span>
-                      <span className="text-xs font-bold text-[#064B40]/80 mr-1">ج.م</span>
+                      <span className="text-2xl font-black text-[#D5A642]">{product.price}</span>
+                      <span className="text-xs font-bold text-[#FFF2D6]/80 mr-1">ج.م</span>
                     </div>
 
                     {!product.is_available ? (
-                      <span className="text-xs font-bold text-red-600 bg-red-50 px-3 py-1.5 rounded-lg">
+                      <span className="text-xs font-bold text-red-400 bg-red-950/50 px-3 py-1.5 rounded-lg border border-red-800">
                         غير متوفر حالياً
                       </span>
                     ) : inCart ? (
-                      <div className="flex items-center gap-2 bg-[#064B40] text-[#FFF2D6] px-2 py-1 rounded-xl">
+                      <div className="flex items-center gap-2 bg-[#D5A642] text-[#042821] px-2 py-1 rounded-xl">
                         <button
                           onClick={() => updateQty(product.id, 1)}
-                          className="p-1 hover:text-[#D5A642]"
+                          className="p-1 hover:opacity-75 font-black"
                         >
                           <Plus className="w-4 h-4" />
                         </button>
@@ -555,7 +553,7 @@ export default function AlAmeedStore() {
                         </span>
                         <button
                           onClick={() => updateQty(product.id, -1)}
-                          className="p-1 hover:text-[#D5A642]"
+                          className="p-1 hover:opacity-75 font-black"
                         >
                           <Minus className="w-4 h-4" />
                         </button>
@@ -563,7 +561,7 @@ export default function AlAmeedStore() {
                     ) : (
                       <button
                         onClick={() => addToCart(product)}
-                        className="flex items-center gap-1.5 bg-[#064B40] text-[#D5A642] font-bold text-sm px-4 py-2 rounded-xl hover:bg-[#085E50] transition"
+                        className="flex items-center gap-1.5 bg-[#D5A642] text-[#042821] font-bold text-sm px-4 py-2 rounded-xl hover:brightness-105 transition shadow"
                       >
                         <Plus className="w-4 h-4" /> أضف للسلة
                       </button>
@@ -584,7 +582,7 @@ export default function AlAmeedStore() {
               setOrderSuccess(false);
               setIsCartOpen(true);
             }}
-            className="w-full bg-[#064B40] text-[#FFF2D6] border-2 border-[#D5A642] py-3.5 px-5 rounded-2xl shadow-2xl flex items-center justify-between font-black"
+            className="w-full bg-[#021B17] text-[#FFF2D6] border-2 border-[#D5A642] py-3.5 px-5 rounded-2xl shadow-2xl flex items-center justify-between font-black"
           >
             <span className="flex items-center gap-2">
               <ShoppingBag className="w-5 h-5 text-[#D5A642]" />
@@ -597,15 +595,15 @@ export default function AlAmeedStore() {
 
       {/* نافذة سلة المشتريات وإتمام الطلب */}
       {isCartOpen && (
-        <div className="fixed inset-0 z-50 bg-black/60 flex items-end sm:items-center justify-center p-0 sm:p-4">
-          <div className="bg-[#FFF2D6] w-full max-w-lg rounded-t-3xl sm:rounded-3xl max-h-[90vh] overflow-y-auto p-6 shadow-2xl border-t-4 border-[#D5A642]">
-            <div className="flex items-center justify-between pb-4 border-b border-[#064B40]/15">
-              <h3 className="text-xl font-black text-[#064B40] flex items-center gap-2">
-                <ShoppingBag className="w-6 h-6 text-[#D5A642]" /> سلة طلباتك
+        <div className="fixed inset-0 z-50 bg-black/70 flex items-end sm:items-center justify-center p-0 sm:p-4">
+          <div className="bg-[#021B17] text-[#FFF2D6] w-full max-w-lg rounded-t-3xl sm:rounded-3xl max-h-[90vh] overflow-y-auto p-6 shadow-2xl border-t-4 border-[#D5A642]">
+            <div className="flex items-center justify-between pb-4 border-b border-[#D5A642]/20">
+              <h3 className="text-xl font-black text-[#D5A642] flex items-center gap-2">
+                <ShoppingBag className="w-6 h-6" /> سلة طلباتك
               </h3>
               <button
                 onClick={() => setIsCartOpen(false)}
-                className="p-1.5 rounded-full bg-white text-[#064B40]"
+                className="p-1.5 rounded-full bg-[#042821] text-[#FFF2D6]"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -613,20 +611,20 @@ export default function AlAmeedStore() {
 
             {orderSuccess ? (
               <div className="py-10 text-center space-y-4">
-                <CheckCircle2 className="w-16 h-16 text-green-600 mx-auto" />
-                <h4 className="text-2xl font-black text-[#064B40]">تم تجهيز طلبك بنجاح!</h4>
-                <p className="text-sm text-[#064B40]/80">
+                <CheckCircle2 className="w-16 h-16 text-green-500 mx-auto" />
+                <h4 className="text-2xl font-black text-[#FFF2D6]">تم تجهيز طلبك بنجاح!</h4>
+                <p className="text-sm text-[#FFF2D6]/80">
                   تم تحويلك إلى واتساب حلواني العميد لتأكيد الطلب وموعد التوصيل.
                 </p>
                 <button
                   onClick={() => setIsCartOpen(false)}
-                  className="bg-[#064B40] text-[#D5A642] font-bold px-6 py-2.5 rounded-xl"
+                  className="bg-[#D5A642] text-[#042821] font-bold px-6 py-2.5 rounded-xl"
                 >
                   العودة للمتجر
                 </button>
               </div>
             ) : cart.length === 0 ? (
-              <div className="py-12 text-center text-[#064B40]/70 font-bold">
+              <div className="py-12 text-center text-[#FFF2D6]/70 font-bold">
                 السلة فارغة حالياً، اختر حلوياتك المفضلة من القائمة.
               </div>
             ) : (
@@ -635,21 +633,21 @@ export default function AlAmeedStore() {
                   {cart.map((item) => (
                     <div
                       key={item.product.id}
-                      className="bg-white p-3 rounded-xl flex items-center justify-between shadow-sm"
+                      className="bg-[#042821] border border-[#D5A642]/20 p-3 rounded-xl flex items-center justify-between shadow-sm"
                     >
                       <div>
-                        <p className="font-bold text-sm text-[#064B40]">{item.product.name_ar}</p>
-                        <p className="text-xs text-[#064B40]/70">
+                        <p className="font-bold text-sm text-[#FFF2D6]">{item.product.name_ar}</p>
+                        <p className="text-xs text-[#FFF2D6]/70">
                           {item.product.price} ج.م × {item.quantity} {item.product.unit}
                         </p>
                       </div>
                       <div className="flex items-center gap-2">
-                        <span className="font-black text-sm text-[#064B40]">
+                        <span className="font-black text-sm text-[#D5A642]">
                           {item.product.price * item.quantity} ج.م
                         </span>
                         <button
                           onClick={() => updateQty(item.product.id, -item.quantity)}
-                          className="text-red-500 p-1"
+                          className="text-red-400 p-1 hover:text-red-300"
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
@@ -658,7 +656,7 @@ export default function AlAmeedStore() {
                   ))}
                 </div>
 
-                <div className="bg-[#064B40] text-[#FFF2D6] p-4 rounded-2xl flex items-center justify-between font-black">
+                <div className="bg-[#042821] border border-[#D5A642] text-[#FFF2D6] p-4 rounded-2xl flex items-center justify-between font-black">
                   <span>الإجمالي الكلي:</span>
                   <span className="text-xl text-[#D5A642]">{totalAmount} جنيه مصري</span>
                 </div>
@@ -670,7 +668,7 @@ export default function AlAmeedStore() {
                     placeholder="الاسم بالكامل *"
                     value={customerName}
                     onChange={(e) => setCustomerName(e.target.value)}
-                    className="w-full bg-white border border-[#064B40]/20 rounded-xl px-4 py-3 text-sm font-semibold focus:outline-none focus:border-[#064B40]"
+                    className="w-full bg-[#042821] text-[#FFF2D6] border border-[#D5A642]/30 rounded-xl px-4 py-3 text-sm font-semibold focus:outline-none focus:border-[#D5A642]"
                   />
                   <input
                     type="tel"
@@ -678,7 +676,7 @@ export default function AlAmeedStore() {
                     placeholder="رقم الموبايل / واتساب *"
                     value={customerPhone}
                     onChange={(e) => setCustomerPhone(e.target.value)}
-                    className="w-full bg-white border border-[#064B40]/20 rounded-xl px-4 py-3 text-sm font-semibold focus:outline-none focus:border-[#064B40]"
+                    className="w-full bg-[#042821] text-[#FFF2D6] border border-[#D5A642]/30 rounded-xl px-4 py-3 text-sm font-semibold focus:outline-none focus:border-[#D5A642]"
                   />
                   <input
                     type="text"
@@ -686,14 +684,14 @@ export default function AlAmeedStore() {
                     placeholder="العنوان بالتفصيل للتوصيل *"
                     value={customerAddress}
                     onChange={(e) => setCustomerAddress(e.target.value)}
-                    className="w-full bg-white border border-[#064B40]/20 rounded-xl px-4 py-3 text-sm font-semibold focus:outline-none focus:border-[#064B40]"
+                    className="w-full bg-[#042821] text-[#FFF2D6] border border-[#D5A642]/30 rounded-xl px-4 py-3 text-sm font-semibold focus:outline-none focus:border-[#D5A642]"
                   />
                   <input
                     type="text"
                     placeholder="ملاحظات إضافية (اختياري)"
                     value={orderNotes}
                     onChange={(e) => setOrderNotes(e.target.value)}
-                    className="w-full bg-white border border-[#064B40]/20 rounded-xl px-4 py-3 text-sm font-semibold focus:outline-none focus:border-[#064B40]"
+                    className="w-full bg-[#042821] text-[#FFF2D6] border border-[#D5A642]/30 rounded-xl px-4 py-3 text-sm font-semibold focus:outline-none focus:border-[#D5A642]"
                   />
                   <button
                     type="submit"
@@ -711,15 +709,15 @@ export default function AlAmeedStore() {
 
       {/* نافذة لوحة إدارة المصنع */}
       {showAdminModal && (
-        <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4">
-          <div className="bg-white w-full max-w-2xl rounded-3xl max-h-[90vh] overflow-y-auto p-6 shadow-2xl border-t-4 border-[#064B40]">
-            <div className="flex items-center justify-between pb-4 border-b">
-              <h3 className="text-xl font-black text-[#064B40] flex items-center gap-2">
-                <Store className="w-6 h-6 text-[#D5A642]" /> لوحة إدارة حلواني العميد
+        <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
+          <div className="bg-[#021B17] text-[#FFF2D6] w-full max-w-2xl rounded-3xl max-h-[90vh] overflow-y-auto p-6 shadow-2xl border-t-4 border-[#D5A642]">
+            <div className="flex items-center justify-between pb-4 border-b border-[#D5A642]/20">
+              <h3 className="text-xl font-black text-[#D5A642] flex items-center gap-2">
+                <Store className="w-6 h-6" /> لوحة إدارة حلواني العميد
               </h3>
               <button
                 onClick={() => setShowAdminModal(false)}
-                className="p-1.5 rounded-full bg-gray-100"
+                className="p-1.5 rounded-full bg-[#042821] text-[#FFF2D6]"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -727,11 +725,11 @@ export default function AlAmeedStore() {
 
             {!adminUser ? (
               <form onSubmit={handleAdminLogin} className="space-y-4 mt-6 max-w-sm mx-auto">
-                <p className="text-sm text-center text-gray-600 font-bold">
+                <p className="text-sm text-center text-[#FFF2D6]/80 font-bold">
                   تسجيل دخول الإدارة لتعديل الأسعار والصور والأصناف
                 </p>
                 {authError && (
-                  <p className="text-xs text-red-600 bg-red-50 p-2.5 rounded-lg text-center font-bold">
+                  <p className="text-xs text-red-400 bg-red-950 p-2.5 rounded-lg text-center font-bold border border-red-800">
                     {authError}
                   </p>
                 )}
@@ -741,7 +739,7 @@ export default function AlAmeedStore() {
                   placeholder="البريد الإلكتروني للإدارة"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full border rounded-xl px-4 py-3 text-sm"
+                  className="w-full bg-[#042821] text-[#FFF2D6] border border-[#D5A642]/30 rounded-xl px-4 py-3 text-sm"
                 />
                 <input
                   type="password"
@@ -749,19 +747,19 @@ export default function AlAmeedStore() {
                   placeholder="كلمة المرور"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full border rounded-xl px-4 py-3 text-sm"
+                  className="w-full bg-[#042821] text-[#FFF2D6] border border-[#D5A642]/30 rounded-xl px-4 py-3 text-sm"
                 />
                 <button
                   type="submit"
-                  className="w-full bg-[#064B40] text-[#D5A642] font-black py-3 rounded-xl"
+                  className="w-full bg-[#D5A642] text-[#042821] font-black py-3 rounded-xl shadow"
                 >
                   دخول لوحة الإدارة
                 </button>
               </form>
             ) : (
               <div className="space-y-6 mt-5">
-                <div className="flex items-center justify-between bg-[#FFF2D6] p-3 rounded-xl">
-                  <span className="text-xs font-bold text-[#064B40]">
+                <div className="flex items-center justify-between bg-[#042821] border border-[#D5A642]/30 p-3 rounded-xl">
+                  <span className="text-xs font-bold text-[#D5A642]">
                     مرحباً أستاذ محمد عماد ({adminUser.email})
                   </span>
                   <button
@@ -769,34 +767,34 @@ export default function AlAmeedStore() {
                       await supabase.auth.signOut();
                       setAdminUser(null);
                     }}
-                    className="flex items-center gap-1 text-xs font-bold text-red-600"
+                    className="flex items-center gap-1 text-xs font-bold text-red-400"
                   >
                     <LogOut className="w-4 h-4" /> خروج
                   </button>
                 </div>
 
                 {/* تغيير لوجو المتجر */}
-                <div className="bg-[#FFF2D6]/60 border border-[#D5A642] p-4 rounded-2xl space-y-3">
+                <div className="bg-[#042821] border border-[#D5A642]/40 p-4 rounded-2xl space-y-3">
                   <div className="flex items-center justify-between gap-3">
                     <div className="flex items-center gap-3">
                       {logoPreview || logoUrl ? (
                         <img
                           src={logoPreview || logoUrl!}
                           alt="اللوجو"
-                          className="w-12 h-12 rounded-full object-cover border-2 border-[#064B40]"
+                          className="w-12 h-12 rounded-full object-cover border-2 border-[#D5A642]"
                         />
                       ) : (
-                        <div className="w-12 h-12 rounded-full bg-[#064B40] text-[#D5A642] flex items-center justify-center font-black text-lg">
+                        <div className="w-12 h-12 rounded-full bg-[#D5A642] text-[#042821] flex items-center justify-center font-black text-lg">
                           ع
                         </div>
                       )}
                       <div>
-                        <p className="font-black text-sm text-[#064B40]">صورة اللوجو (الشريط العلوي)</p>
-                        <p className="text-xs text-[#064B40]/75">تظهر في أعلى الموقع بجانب الاسم</p>
+                        <p className="font-black text-sm text-[#FFF2D6]">صورة اللوجو (الشريط العلوي)</p>
+                        <p className="text-xs text-[#FFF2D6]/75">تظهر في أعلى الموقع بجانب الاسم</p>
                       </div>
                     </div>
-                    <label className="cursor-pointer bg-white border border-[#064B40]/40 text-[#064B40] font-bold text-xs px-3 py-2 rounded-xl flex items-center gap-1.5 shrink-0 hover:bg-[#FFF2D6]">
-                      <Camera className="w-4 h-4 text-[#D5A642]" />
+                    <label className="cursor-pointer bg-[#021B17] border border-[#D5A642] text-[#D5A642] font-bold text-xs px-3 py-2 rounded-xl flex items-center gap-1.5 shrink-0 hover:bg-[#042821]">
+                      <Camera className="w-4 h-4" />
                       <span>{selectedLogoFile ? 'تم اختيار صورة' : 'اختر صورة'}</span>
                       <input
                         type="file"
@@ -816,7 +814,7 @@ export default function AlAmeedStore() {
                     <button
                       onClick={handleSaveLogo}
                       disabled={uploadingId === 'logo'}
-                      className="w-full bg-[#064B40] text-[#D5A642] font-bold text-xs py-2 rounded-xl flex items-center justify-center gap-1.5 shadow"
+                      className="w-full bg-[#D5A642] text-[#042821] font-bold text-xs py-2 rounded-xl flex items-center justify-center gap-1.5 shadow"
                     >
                       {uploadingId === 'logo' && <Loader2 className="w-4 h-4 animate-spin" />}
                       حفظ وتحديث اللوجو
@@ -824,13 +822,12 @@ export default function AlAmeedStore() {
                   )}
                 </div>
 
-                {/* إدارة البانرات المتحركة (إضافة وحذف) */}
-                <div className="bg-[#FFF2D6]/60 border border-[#D5A642] p-4 rounded-2xl space-y-3">
-                  <h4 className="font-black text-sm text-[#064B40]">🖼️ إدارة البانرات المتحركة (السلايدر)</h4>
+                {/* إدارة البانرات المتحركة (السلايدر) */}
+                <div className="bg-[#042821] border border-[#D5A642]/40 p-4 rounded-2xl space-y-3">
+                  <h4 className="font-black text-sm text-[#D5A642]">🖼️ إدارة البانرات المتحركة (السلايدر)</h4>
                   
-                  {/* نموذج إضافة بانر جديد */}
-                  <form onSubmit={handleAddBanner} className="space-y-2 bg-white p-3 rounded-xl border">
-                    <label className="flex items-center gap-2 cursor-pointer border border-dashed border-[#064B40]/40 px-3 py-2 rounded-xl text-xs font-bold text-[#064B40] hover:bg-[#FFF2D6]">
+                  <form onSubmit={handleAddBanner} className="space-y-2 bg-[#021B17] p-3 rounded-xl border border-[#D5A642]/20">
+                    <label className="flex items-center gap-2 cursor-pointer border border-dashed border-[#D5A642]/40 px-3 py-2 rounded-xl text-xs font-bold text-[#FFF2D6] hover:bg-[#042821]">
                       <ImageIcon className="w-4 h-4 text-[#D5A642]" />
                       <span>{newBannerFile ? newBannerFile.name : 'اختر صورة بانر جديدة'}</span>
                       <input
@@ -850,7 +847,7 @@ export default function AlAmeedStore() {
                       <button
                         type="submit"
                         disabled={uploadingId === 'banner-add'}
-                        className="w-full bg-[#064B40] text-[#D5A642] font-bold text-xs py-2 rounded-xl flex items-center justify-center gap-1.5"
+                        className="w-full bg-[#D5A642] text-[#042821] font-bold text-xs py-2 rounded-xl flex items-center justify-center gap-1.5"
                       >
                         {uploadingId === 'banner-add' && <Loader2 className="w-4 h-4 animate-spin" />}
                         رفع وإضافة للبانرات المتحركة
@@ -858,14 +855,13 @@ export default function AlAmeedStore() {
                     )}
                   </form>
 
-                  {/* قائمة البانرات الحالية مع زر حذف */}
                   <div className="space-y-2 max-h-40 overflow-y-auto">
                     {banners.map((b) => (
-                      <div key={b.id} className="flex items-center justify-between bg-white p-2 rounded-xl border">
+                      <div key={b.id} className="flex items-center justify-between bg-[#021B17] p-2 rounded-xl border border-[#D5A642]/20">
                         <img src={b.image_url} alt="بانر" className="w-16 h-10 object-cover rounded-lg" />
                         <button
                           onClick={() => handleDeleteBanner(b.id)}
-                          className="bg-red-100 text-red-600 p-2 rounded-lg hover:bg-red-200 transition"
+                          className="bg-red-950 text-red-400 p-2 rounded-lg hover:bg-red-900 transition border border-red-800"
                           title="حذف البانر"
                         >
                           <Trash2 className="w-4 h-4" />
@@ -876,8 +872,8 @@ export default function AlAmeedStore() {
                 </div>
 
                 {/* إضافة صنف جديد */}
-                <form onSubmit={handleAddProduct} className="bg-gray-50 p-4 rounded-2xl space-y-3">
-                  <h4 className="font-black text-sm text-[#064B40]">+ إضافة صنف جديد للقائمة</h4>
+                <form onSubmit={handleAddProduct} className="bg-[#042821] border border-[#D5A642]/30 p-4 rounded-2xl space-y-3">
+                  <h4 className="font-black text-sm text-[#D5A642]">+ إضافة صنف جديد للقائمة</h4>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                     <input
                       type="text"
@@ -885,7 +881,7 @@ export default function AlAmeedStore() {
                       placeholder="اسم الصنف (مثال: كحك ملبن)"
                       value={newProductName}
                       onChange={(e) => setNewProductName(e.target.value)}
-                      className="border rounded-xl px-3 py-2 text-sm bg-white"
+                      className="border border-[#D5A642]/30 rounded-xl px-3 py-2 text-sm bg-[#021B17] text-[#FFF2D6]"
                     />
                     <input
                       type="number"
@@ -893,12 +889,12 @@ export default function AlAmeedStore() {
                       placeholder="السعر بالجنيه"
                       value={newProductPrice}
                       onChange={(e) => setNewProductPrice(e.target.value)}
-                      className="border rounded-xl px-3 py-2 text-sm bg-white"
+                      className="border border-[#D5A642]/30 rounded-xl px-3 py-2 text-sm bg-[#021B17] text-[#FFF2D6]"
                     />
                     <select
                       value={newProductCat}
                       onChange={(e) => setNewProductCat(e.target.value)}
-                      className="border rounded-xl px-3 py-2 text-sm bg-white"
+                      className="border border-[#D5A642]/30 rounded-xl px-3 py-2 text-sm bg-[#021B17] text-[#FFF2D6]"
                     >
                       {categories.map((c) => (
                         <option key={c.id} value={c.id}>
@@ -911,12 +907,12 @@ export default function AlAmeedStore() {
                       placeholder="الوحدة (كيلو / علبة / قطعة)"
                       value={newProductUnit}
                       onChange={(e) => setNewProductUnit(e.target.value)}
-                      className="border rounded-xl px-3 py-2 text-sm bg-white"
+                      className="border border-[#D5A642]/30 rounded-xl px-3 py-2 text-sm bg-[#021B17] text-[#FFF2D6]"
                     />
                   </div>
 
                   <div className="flex flex-col gap-2 pt-1">
-                    <label className="flex items-center gap-2 cursor-pointer bg-white border border-dashed border-[#064B40]/40 px-3 py-2 rounded-xl text-xs font-bold text-[#064B40] hover:bg-[#FFF2D6]">
+                    <label className="flex items-center gap-2 cursor-pointer bg-[#021B17] border border-dashed border-[#D5A642]/40 px-3 py-2 rounded-xl text-xs font-bold text-[#FFF2D6] hover:bg-[#042821]">
                       <Camera className="w-4 h-4 text-[#D5A642]" />
                       <span>{newProductFile ? newProductFile.name : 'اختر صورة الصنف (اختياري)'}</span>
                       <input
@@ -936,7 +932,7 @@ export default function AlAmeedStore() {
                     <button
                       type="submit"
                       disabled={uploadingId === 'new'}
-                      className="w-full bg-[#064B40] text-[#D5A642] font-bold text-xs py-2.5 rounded-xl flex items-center justify-center gap-1.5"
+                      className="w-full bg-[#D5A642] text-[#042821] font-bold text-xs py-2.5 rounded-xl flex items-center justify-center gap-1.5"
                     >
                       {uploadingId === 'new' && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                       حفظ وإضافة الصنف
@@ -946,11 +942,11 @@ export default function AlAmeedStore() {
 
                 {/* تعديل الأسعار والصور الحالية */}
                 <div className="space-y-2 max-h-80 overflow-y-auto">
-                  <h4 className="font-black text-sm text-[#064B40]">تعديل الأسعار والصور والتوافر:</h4>
+                  <h4 className="font-black text-sm text-[#D5A642]">تعديل الأسعار والصور والتوافر:</h4>
                   {products.map((p) => (
                     <div
                       key={p.id}
-                      className="flex flex-col border p-2.5 rounded-xl text-sm gap-2 bg-gray-50"
+                      className="flex flex-col border border-[#D5A642]/20 p-2.5 rounded-xl text-sm gap-2 bg-[#042821]"
                     >
                       <div className="flex items-center justify-between gap-2">
                         <div className="flex items-center gap-2.5 min-w-0">
@@ -958,19 +954,19 @@ export default function AlAmeedStore() {
                             <img
                               src={productPreviews[p.id] || p.image_url!}
                               alt={p.name_ar}
-                              className="w-10 h-10 rounded-lg object-cover border shrink-0"
+                              className="w-10 h-10 rounded-lg object-cover border border-[#D5A642] shrink-0"
                             />
                           ) : (
-                            <div className="w-10 h-10 rounded-lg bg-[#FFF2D6] flex items-center justify-center text-xs font-bold text-[#064B40]/50 shrink-0">
+                            <div className="w-10 h-10 rounded-lg bg-[#021B17] flex items-center justify-center text-xs font-bold text-[#FFF2D6]/50 shrink-0">
                               بدون
                             </div>
                           )}
-                          <span className="font-bold truncate">{p.name_ar}</span>
+                          <span className="font-bold truncate text-[#FFF2D6]">{p.name_ar}</span>
                         </div>
 
                         <div className="flex items-center gap-1.5 shrink-0">
                           <label
-                            className="cursor-pointer p-1.5 rounded-lg bg-[#FFF2D6] text-[#064B40] hover:bg-[#D5A642]"
+                            className="cursor-pointer p-1.5 rounded-lg bg-[#021B17] text-[#D5A642] hover:bg-[#D5A642] hover:text-[#042821] transition"
                             title="اختر صورة جديدة للصنف"
                           >
                             <Camera className="w-4 h-4" />
@@ -994,7 +990,7 @@ export default function AlAmeedStore() {
                                 type="number"
                                 value={editPrice}
                                 onChange={(e) => setEditPrice(e.target.value)}
-                                className="w-16 border rounded-lg px-1.5 py-1 text-center font-bold bg-white"
+                                className="w-16 border border-[#D5A642] rounded-lg px-1.5 py-1 text-center font-bold bg-[#021B17] text-[#FFF2D6]"
                               />
                               <button
                                 onClick={() => handleSavePrice(p.id)}
@@ -1005,7 +1001,7 @@ export default function AlAmeedStore() {
                             </>
                           ) : (
                             <>
-                              <span className="font-black text-[#064B40] text-xs sm:text-sm">
+                              <span className="font-black text-[#D5A642] text-xs sm:text-sm">
                                 {p.price} ج.م
                               </span>
                               <button
@@ -1013,7 +1009,7 @@ export default function AlAmeedStore() {
                                   setEditingProductId(p.id);
                                   setEditPrice(String(p.price));
                                 }}
-                                className="text-blue-600 p-1"
+                                className="text-blue-400 p-1"
                               >
                                 <Edit3 className="w-4 h-4" />
                               </button>
@@ -1024,8 +1020,8 @@ export default function AlAmeedStore() {
                             onClick={() => toggleAvailability(p)}
                             className={`text-xs px-2 py-1 rounded-lg font-bold ${
                               p.is_available
-                                ? 'bg-green-100 text-green-800'
-                                : 'bg-red-100 text-red-700'
+                                ? 'bg-green-950 text-green-300 border border-green-800'
+                                : 'bg-red-950 text-red-300 border border-red-800'
                             }`}
                           >
                             {p.is_available ? 'متوفر' : 'نفد'}
@@ -1037,7 +1033,7 @@ export default function AlAmeedStore() {
                         <button
                           onClick={() => handleSaveProductImage(p.id)}
                           disabled={uploadingId === p.id}
-                          className="w-full bg-[#064B40] text-[#D5A642] font-bold text-xs py-1.5 rounded-lg flex items-center justify-center gap-1 shadow"
+                          className="w-full bg-[#D5A642] text-[#042821] font-bold text-xs py-1.5 rounded-lg flex items-center justify-center gap-1 shadow"
                         >
                           {uploadingId === p.id && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                           حفظ وتحديث صورة ({p.name_ar})
@@ -1053,7 +1049,7 @@ export default function AlAmeedStore() {
       )}
 
       {/* الفوتر */}
-      <footer className="bg-[#064B40] text-[#FFF2D6] py-6 px-4 text-center border-t-2 border-[#D5A642] mt-10 space-y-2">
+      <footer className="bg-[#021B17] text-[#FFF2D6] py-6 px-4 text-center border-t-2 border-[#D5A642] mt-10 space-y-2">
         <p className="font-black text-[#D5A642] text-base">حلواني العميد</p>
         <p className="text-xs text-[#FFF2D6]/80">
           الصبرية - شربين - طريق دمياط السريع | للطلبات والاستفسار: 01016552275
@@ -1061,7 +1057,7 @@ export default function AlAmeedStore() {
         <div className="pt-2">
           <button
             onClick={() => setShowAdminModal(true)}
-            className="inline-flex items-center gap-1.5 text-xs text-[#D5A642]/80 hover:text-[#D5A642] bg-[#04362E] px-3 py-1.5 rounded-lg border border-[#D5A642]/30 transition"
+            className="inline-flex items-center gap-1.5 text-xs text-[#D5A642] hover:underline bg-[#042821] px-3 py-1.5 rounded-lg border border-[#D5A642]/30 transition"
           >
             <Lock className="w-3.5 h-3.5" /> إدارة الموقع
           </button>
