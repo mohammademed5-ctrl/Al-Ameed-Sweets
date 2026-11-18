@@ -15,21 +15,16 @@ import {
   Sparkles,
   Store,
   Edit3,
-  Save,
   X,
   Camera,
   Loader2,
-  Image as ImageIcon,
   ChevronLeft,
   ChevronRight,
-  TrendingUp,
-  Package,
-  Layers,
+  Users,
   FileText,
-  RefreshCw,
-  AlertTriangle,
-  ShoppingCart,
-  DollarSign
+  UserPlus,
+  Send,
+  Award
 } from 'lucide-react';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://ckrfnznzjfmdynjfnxie.supabase.co';
@@ -59,12 +54,22 @@ interface Banner {
   title_ar?: string;
 }
 
+interface Customer {
+  id: string;
+  name: string;
+  phone: string;
+  address?: string;
+  customer_type: string;
+  total_purchases: number;
+  total_spent: number;
+}
+
 interface CartItem {
   product: Product;
   quantity: number;
 }
 
-export default function AlAmeedStoreERP() {
+export default function AlAmeedStoreCRM() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
@@ -76,22 +81,17 @@ export default function AlAmeedStoreERP() {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  // حالات لوحة الإدارة و ERP
+  // حالات لوحة الإدارة و CRM
   const [showAdminModal, setShowAdminModal] = useState(false);
   const [adminUser, setAdminUser] = useState<any>(null);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [authError, setAuthError] = useState('');
-  const [adminTab, setAdminTab] = useState<'store' | 'erp' | 'raw' | 'reports'>('store');
+  const [adminTab, setAdminTab] = useState<'store' | 'crm' | 'new-sale' | 'customers' | 'erp'>('store');
 
   const [selectedLogoFile, setSelectedLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
-  
   const [newBannerFile, setNewBannerFile] = useState<File | null>(null);
-  const [newBannerTitle, setNewBannerTitle] = useState('');
-
-  const [productFiles, setProductFiles] = useState<{ [key: string]: File }>({});
-  const [productPreviews, setProductPreviews] = useState<{ [key: string]: string }>({});
 
   const [customerName, setCustomerName] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
@@ -100,18 +100,19 @@ export default function AlAmeedStoreERP() {
   const [submitting, setSubmitting] = useState(false);
   const [orderSuccess, setOrderSuccess] = useState(false);
 
-  const [editingProductId, setEditingProductId] = useState<string | null>(null);
-  const [editPrice, setEditPrice] = useState<string>('');
-  const [newProductName, setNewProductName] = useState('');
-  const [newProductPrice, setNewProductPrice] = useState('');
-  const [newProductCat, setNewProductCat] = useState('');
-  const [newProductUnit, setNewProductUnit] = useState('كيلو');
-  const [newProductFile, setNewProductFile] = useState<File | null>(null);
-  const [uploadingId, setUploadingId] = useState<string | null>(null);
-
-  // بيانات ERP
-  const [rawMaterials, setRawMaterials] = useState<any[]>([]);
+  // بيانات CRM والعملاء
+  const [customers, setCustomers] = useState<Customer[]>([]);
   const [erpSales, setErpSales] = useState<any[]>([]);
+  const [searchPhone, setSearchPhone] = useState('');
+  const [matchedCustomer, setMatchedCustomer] = useState<Customer | null>(null);
+
+  // نموذج بيع يدوي عبر CRM
+  const [crmCustName, setCrmCustName] = useState('');
+  const [crmCustPhone, setCrmCustPhone] = useState('');
+  const [crmCustAddress, setCrmCustAddress] = useState('');
+  const [crmProdId, setCrmProdId] = useState('');
+  const [crmQty, setCrmQty] = useState('1');
+  const [crmDiscount, setCrmDiscount] = useState('0');
 
   useEffect(() => {
     fetchStoreData();
@@ -130,7 +131,7 @@ export default function AlAmeedStoreERP() {
     const { data } = await supabase.auth.getSession();
     if (data.session?.user) {
       setAdminUser(data.session.user);
-      fetchERPData();
+      fetchCRMData();
     }
   }
 
@@ -145,167 +146,136 @@ export default function AlAmeedStoreERP() {
 
     if (catRes.data) {
       setCategories(catRes.data);
-      if (catRes.data.length > 0 && !newProductCat) {
-        setNewProductCat(catRes.data[0].id);
+      if (catRes.data.length > 0 && prodRes.data && prodRes.data.length > 0 && !crmProdId) {
+        setCrmProdId(prodRes.data[0].id);
       }
     }
     if (prodRes.data) setProducts(prodRes.data);
-    if (settingsRes.data && settingsRes.data.logo_url) {
-      setLogoUrl(settingsRes.data.logo_url);
-    }
-    if (bannerRes.data) {
-      setBanners(bannerRes.data);
-    }
+    if (settingsRes.data && settingsRes.data.logo_url) setLogoUrl(settingsRes.data.logo_url);
+    if (bannerRes.data) setBanners(bannerRes.data);
     setLoading(false);
   }
 
-  async function fetchERPData() {
+  async function fetchCRMData() {
     try {
-      const [rawRes, salesRes] = await Promise.all([
-        supabase.from('raw_materials').select('*'),
+      const [custRes, salesRes] = await Promise.all([
+        supabase.from('customers').select('*').order('total_spent', { ascending: false }),
         supabase.from('sales').select('*').order('created_at', { ascending: false })
       ]);
-      if (rawRes.data) setRawMaterials(rawRes.data);
+      if (custRes.data) setCustomers(custRes.data);
       if (salesRes.data) setErpSales(salesRes.data);
     } catch (e) {
       console.error(e);
     }
   }
 
+  // البحث عن العميل برقم الهاتف تلقائياً
+  async function handlePhoneLookup(phoneInput: string) {
+    setCustomerPhone(phoneInput);
+    if (phoneInput.length >= 10) {
+      const { data } = await supabase.from('customers').select('*').eq('phone', phoneInput).maybeSingle();
+      if (data) {
+        setCustomerName(data.name);
+        setCustomerAddress(data.address || '');
+      }
+    }
+  }
+
   async function uploadImageToStorage(file: File): Promise<string | null> {
     const fileExt = file.name.split('.').pop() || 'jpg';
     const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 8)}.${fileExt}`;
-    const { error } = await supabase.storage
-      .from('product-images')
-      .upload(fileName, file, { upsert: true });
-
-    if (error) {
-      alert('حدث خطأ أثناء رفع الصورة: ' + error.message);
-      return null;
-    }
-
+    const { error } = await supabase.storage.from('product-images').upload(fileName, file, { upsert: true });
+    if (error) return null;
     const { data } = supabase.storage.from('product-images').getPublicUrl(fileName);
     return data.publicUrl;
   }
 
   async function handleSaveLogo() {
     if (!selectedLogoFile) return;
-    setUploadingId('logo');
     const publicUrl = await uploadImageToStorage(selectedLogoFile);
     if (publicUrl) {
       await supabase.from('store_settings').upsert({ id: 1, logo_url: publicUrl });
       setLogoUrl(publicUrl);
       setSelectedLogoFile(null);
-      setLogoPreview(null);
-      await fetchStoreData();
-      alert('تم حفظ وتحديث اللوجو بنجاح!');
+      alert('تم تحديث اللوجو بنجاح!');
     }
-    setUploadingId(null);
   }
 
   async function handleAddBanner(e: React.FormEvent) {
     e.preventDefault();
     if (!newBannerFile) return;
-    setUploadingId('banner-add');
     const publicUrl = await uploadImageToStorage(newBannerFile);
     if (publicUrl) {
-      await supabase.from('store_banners').insert([
-        { image_url: publicUrl, title_ar: newBannerTitle }
-      ]);
+      await supabase.from('store_banners').insert([{ image_url: publicUrl }]);
       setNewBannerFile(null);
-      setNewBannerTitle('');
-      await fetchStoreData();
-      alert('تم إضافة البانر المتحرك بنجاح!');
+      fetchStoreData();
+      alert('تم إضافة البانر بنجاح!');
     }
-    setUploadingId(null);
-  }
-
-  async function handleDeleteBanner(bannerId: string) {
-    if (!confirm('هل أنت متأكد من حذف هذا البانر؟')) return;
-    await supabase.from('store_banners').delete().eq('id', bannerId);
-    await fetchStoreData();
-  }
-
-  async function handleSaveProductImage(productId: string) {
-    const file = productFiles[productId];
-    if (!file) return;
-    setUploadingId(productId);
-    const publicUrl = await uploadImageToStorage(file);
-    if (publicUrl) {
-      await supabase.from('products').update({ image_url: publicUrl }).eq('id', productId);
-      setProductFiles((prev) => {
-        const copy = { ...prev };
-        delete copy[productId];
-        return copy;
-      });
-      setProductPreviews((prev) => {
-        const copy = { ...prev };
-        delete copy[productId];
-        return copy;
-      });
-      await fetchStoreData();
-      alert('تم تحديث صورة الصنف بنجاح!');
-    }
-    setUploadingId(null);
   }
 
   function addToCart(product: Product) {
     setCart((prev) => {
       const existing = prev.find((item) => item.product.id === product.id);
       if (existing) {
-        return prev.map((item) =>
-          item.product.id === product.id ? { ...item, quantity: item.quantity + 1 } : item
-        );
+        return prev.map((item) => item.product.id === product.id ? { ...item, quantity: item.quantity + 1 } : item);
       }
       return [...prev, { product, quantity: 1 }];
     });
   }
 
   function updateQty(productId: string, delta: number) {
-    setCart((prev) =>
-      prev
-        .map((item) =>
-          item.product.id === productId
-            ? { ...item, quantity: Math.max(0, item.quantity + delta) }
-            : item
-        )
-        .filter((item) => item.quantity > 0)
-    );
+    setCart((prev) => prev.map((item) => item.product.id === productId ? { ...item, quantity: Math.max(0, item.quantity + delta) } : item).filter((item) => item.quantity > 0));
   }
 
   const totalAmount = cart.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
   const totalItemsCount = cart.reduce((sum, item) => sum + item.quantity, 0);
 
+  // إتمام الطلب من المتجر والربط مع جدول العملاء والفواتير
   async function handleCheckout(e: React.FormEvent) {
     e.preventDefault();
     if (!customerName || !customerPhone || !customerAddress || cart.length === 0) return;
 
     setSubmitting(true);
     try {
-      await supabase.from('sales').insert([
-        {
-          customer_id: null,
-          total_amount: totalAmount,
-          paid_amount: totalAmount,
-          remaining_amount: 0,
-          payment_method: 'نقدي',
-          notes: `${customerName} - ${customerPhone} - ${customerAddress} - ${orderNotes}`
-        }
-      ]);
-    } catch (_) {}
+      // 1. التحقق من وجود العميل أو إنشائه تلقائياً (منع التكرار برقم الهاتف)
+      let customerId;
+      const { data: existingCust } = await supabase.from('customers').select('*').eq('phone', customerPhone).maybeSingle();
+      
+      if (existingCust) {
+        customerId = existingCust.id;
+        await supabase.from('customers').update({
+          total_purchases: existingCust.total_purchases + 1,
+          total_spent: existingCust.total_spent + totalAmount,
+          last_purchase_at: new Date().toISOString()
+        }).eq('id', customerId);
+      } else {
+        const { data: newCust } = await supabase.from('customers').insert([{
+          name: customerName,
+          phone: customerPhone,
+          address: customerAddress,
+          total_purchases: 1,
+          total_spent: totalAmount,
+          first_purchase_at: new Date().toISOString(),
+          last_purchase_at: new Date().toISOString()
+        }]).select().single();
+        if (newCust) customerId = newCust.id;
+      }
 
-    const itemsLines = cart
-      .map(
-        (item, idx) =>
-          `${idx + 1}. ${item.product.name_ar} (${item.quantity} ${item.product.unit}) = ${
-            item.product.price * item.quantity
-          } ج.م`
-      )
-      .join('\n');
+      // 2. تسجيل الفاتورة في جدول المبيعات
+      await supabase.from('sales').insert([{
+        customer_id: customerId,
+        total_amount: totalAmount,
+        paid_amount: totalAmount,
+        remaining_amount: 0,
+        payment_method: 'نقدي',
+        notes: `طلب متجر: ${customerName} (${customerPhone})`
+      }]);
+    } catch (err) {
+      console.error(err);
+    }
 
-    const message = `السلام عليكم، طلب جديد من موقع *حلواني العميد* 👑\n\n*الاسم:* ${customerName}\n*الموبايل:* ${customerPhone}\n*العنوان:* ${customerAddress}\n${
-      orderNotes ? `*ملاحظات:* ${orderNotes}\n` : ''
-    }\n*تفاصيل الطلب:*\n${itemsLines}\n\n*الإجمالي المطلوب:* ${totalAmount} جنيه مصري`;
+    const itemsLines = cart.map((item, idx) => `${idx + 1}. ${item.product.name_ar} (${item.quantity} ${item.product.unit}) = ${item.product.price * item.quantity} ج.م`).join('\n');
+    const message = `أهلاً وسهلاً بحضرتك ❤️\n\nشكراً لثقتك في حلواني العميد.\n\nتم تسجيل عملية الشراء الخاصة بك:\n\n*العميل:* ${customerName}\n*التفاصيل:*\n${itemsLines}\n\n*الإجمالي المطلوب:* ${totalAmount} جنيه مصري.\n\nحلواني العميد.. من إيد العميد الحلو أكيد ❤️`;
 
     const whatsappUrl = `https://wa.me/201016552275?text=${encodeURIComponent(message)}`;
     setSubmitting(false);
@@ -314,64 +284,76 @@ export default function AlAmeedStoreERP() {
     window.open(whatsappUrl, '_blank');
   }
 
+  // تسجيل فاتورة بيع يدوية عبر لوحة إدارة CRM
+  async function handleCrmManualSale(e: React.FormEvent) {
+    e.preventDefault();
+    if (!crmCustName || !crmCustPhone || !crmProdId) return;
+
+    const selectedProd = products.find(p => p.id === crmProdId);
+    const unitPrice = selectedProd ? selectedProd.price : 0;
+    const qty = parseFloat(crmQty) || 1;
+    const discountVal = parseFloat(crmDiscount) || 0;
+    const total = (unitPrice * qty) - discountVal;
+
+    try {
+      let customerId;
+      const { data: existing } = await supabase.from('customers').select('*').eq('phone', crmCustPhone).maybeSingle();
+      if (existing) {
+        customerId = existing.id;
+        await supabase.from('customers').update({
+          total_purchases: existing.total_purchases + 1,
+          total_spent: existing.total_spent + total,
+          last_purchase_at: new Date().toISOString()
+        }).eq('id', customerId);
+      } else {
+        const { data: newC } = await supabase.from('customers').insert([{
+          name: crmCustName,
+          phone: crmCustPhone,
+          address: crmCustAddress,
+          total_purchases: 1,
+          total_spent: total,
+          first_purchase_at: new Date().toISOString(),
+          last_purchase_at: new Date().toISOString()
+        }]).select().single();
+        if (newC) customerId = newC.id;
+      }
+
+      await supabase.from('sales').insert([{
+        customer_id: customerId,
+        total_amount: total,
+        discount: discountVal,
+        paid_amount: total,
+        remaining_amount: 0,
+        payment_method: 'نقدي',
+        notes: `CRM يدوي: ${crmCustName} - الصنف: ${selectedProd?.name_ar} × ${qty}`
+      }]);
+
+      alert('تم تسجيل الفاتورة وتحديث بيانات العميل والمخزون بنجاح!');
+      setCrmCustName('');
+      setCrmCustPhone('');
+      setCrmCustAddress('');
+      setCrmQty('1');
+      setCrmDiscount('0');
+      fetchCRMData();
+      setAdminTab('crm');
+    } catch (err: any) {
+      alert('خطأ أثناء الحفظ: ' + err.message);
+    }
+  }
+
   async function handleAdminLogin(e: React.FormEvent) {
     e.preventDefault();
     setAuthError('');
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) {
-      setAuthError('بيانات الدخول غير صحيحة، تأكد من البريد وكلمة المرور.');
+      setAuthError('بيانات الدخول غير صحيحة.');
     } else {
       setAdminUser(data.user);
-      fetchERPData();
+      fetchCRMData();
     }
   }
 
-  async function handleSavePrice(productId: string) {
-    const numericPrice = parseFloat(editPrice);
-    if (isNaN(numericPrice) || numericPrice <= 0) return;
-    await supabase.from('products').update({ price: numericPrice }).eq('id', productId);
-    setEditingProductId(null);
-    fetchStoreData();
-  }
-
-  async function toggleAvailability(product: Product) {
-    await supabase
-      .from('products')
-      .update({ is_available: !product.is_available })
-      .eq('id', product.id);
-    fetchStoreData();
-  }
-
-  async function handleAddProduct(e: React.FormEvent) {
-    e.preventDefault();
-    if (!newProductName || !newProductPrice || !newProductCat) return;
-    setUploadingId('new');
-
-    let uploadedUrl: string | null = null;
-    if (newProductFile) {
-      uploadedUrl = await uploadImageToStorage(newProductFile);
-    }
-
-    await supabase.from('products').insert([
-      {
-        name_ar: newProductName,
-        price: parseFloat(newProductPrice),
-        category_id: newProductCat,
-        unit: newProductUnit,
-        is_available: true,
-        image_url: uploadedUrl,
-      },
-    ]);
-
-    setNewProductName('');
-    setNewProductPrice('');
-    setNewProductFile(null);
-    setUploadingId(null);
-    fetchStoreData();
-  }
-
-  const filteredProducts =
-    selectedCat === 'all' ? products : products.filter((p) => p.category_id === selectedCat);
+  const filteredProducts = selectedCat === 'all' ? products : products.filter((p) => p.category_id === selectedCat);
 
   return (
     <div className="min-h-screen flex flex-col bg-[#042821] text-[#FFF2D6]">
@@ -380,36 +362,20 @@ export default function AlAmeedStoreERP() {
         <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
             {logoUrl ? (
-              <img
-                src={logoUrl}
-                alt="حلواني العميد"
-                className="w-12 h-12 rounded-full object-cover border-2 border-[#D5A642] shadow"
-              />
+              <img src={logoUrl} alt="حلواني العميد" className="w-12 h-12 rounded-full object-cover border-2 border-[#D5A642] shadow" />
             ) : (
-              <div className="w-11 h-11 rounded-full bg-[#D5A642] text-[#042821] flex items-center justify-center font-black text-xl shadow">
-                ع
-              </div>
+              <div className="w-11 h-11 rounded-full bg-[#D5A642] text-[#042821] flex items-center justify-center font-black text-xl shadow">ع</div>
             )}
             <div>
-              <h1 className="text-lg md:text-2xl font-black text-[#D5A642] leading-tight">
-                حلواني العميد
-              </h1>
+              <h1 className="text-lg md:text-2xl font-black text-[#D5A642] leading-tight">حلواني العميد</h1>
             </div>
           </div>
 
-          <button
-            onClick={() => {
-              setOrderSuccess(false);
-              setIsCartOpen(true);
-            }}
-            className="relative flex items-center gap-2 bg-[#D5A642] text-[#042821] font-extrabold px-4 py-2 rounded-xl shadow hover:brightness-105 transition"
-          >
+          <button onClick={() => { setOrderSuccess(false); setIsCartOpen(true); }} className="relative flex items-center gap-2 bg-[#D5A642] text-[#042821] font-extrabold px-4 py-2 rounded-xl shadow hover:brightness-105 transition">
             <ShoppingBag className="w-5 h-5" />
             <span className="text-sm">السلة</span>
             {totalItemsCount > 0 && (
-              <span className="bg-[#042821] text-[#D5A642] text-xs font-black px-2 py-0.5 rounded-full">
-                {totalItemsCount}
-              </span>
+              <span className="bg-[#042821] text-[#D5A642] text-xs font-black px-2 py-0.5 rounded-full">{totalItemsCount}</span>
             )}
           </button>
         </div>
@@ -424,45 +390,16 @@ export default function AlAmeedStoreERP() {
 
           {banners.length > 0 ? (
             <div className="relative w-full h-56 sm:h-80 rounded-2xl overflow-hidden border-2 border-[#D5A642] shadow-2xl my-3 group">
-              <img
-                src={banners[currentBannerIndex].image_url}
-                alt="بانر حلواني العميد"
-                className="w-full h-full object-cover transition-all duration-700"
-              />
-
+              <img src={banners[currentBannerIndex].image_url} alt="بانر حلواني العميد" className="w-full h-full object-cover transition-all duration-700" />
               {banners.length > 1 && (
                 <>
-                  <button
-                    onClick={() => setCurrentBannerIndex((prev) => (prev === 0 ? banners.length - 1 : prev - 1))}
-                    className="absolute left-3 top-1/2 -translate-y-1/2 bg-black/50 text-white p-2 rounded-full hover:bg-black/75 transition"
-                  >
-                    <ChevronLeft className="w-5 h-5" />
-                  </button>
-                  <button
-                    onClick={() => setCurrentBannerIndex((prev) => (prev + 1) % banners.length)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 bg-black/50 text-white p-2 rounded-full hover:bg-black/75 transition"
-                  >
-                    <ChevronRight className="w-5 h-5" />
-                  </button>
-
-                  <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5">
-                    {banners.map((_, idx) => (
-                      <button
-                        key={idx}
-                        onClick={() => setCurrentBannerIndex(idx)}
-                        className={`w-2.5 h-2.5 rounded-full transition ${
-                          currentBannerIndex === idx ? 'bg-[#D5A642] w-6' : 'bg-white/50'
-                        }`}
-                      />
-                    ))}
-                  </div>
+                  <button onClick={() => setCurrentBannerIndex((prev) => (prev === 0 ? banners.length - 1 : prev - 1))} className="absolute left-3 top-1/2 -translate-y-1/2 bg-black/50 text-white p-2 rounded-full"><ChevronLeft className="w-5 h-5" /></button>
+                  <button onClick={() => setCurrentBannerIndex((prev) => (prev + 1) % banners.length)} className="absolute right-3 top-1/2 -translate-y-1/2 bg-black/50 text-white p-2 rounded-full"><ChevronRight className="w-5 h-5" /></button>
                 </>
               )}
             </div>
           ) : (
-            <div className="w-full h-44 rounded-2xl bg-[#021B17] border-2 border-[#D5A642]/40 flex items-center justify-center text-[#D5A642] font-bold text-sm">
-              أضف بانرات متحركة من لوحة الإدارة
-            </div>
+            <div className="w-full h-44 rounded-2xl bg-[#021B17] border-2 border-[#D5A642]/40 flex items-center justify-center text-[#D5A642] font-bold text-sm">أضف بانرات متحركة من لوحة الإدارة</div>
           )}
 
           <h2 className="text-3xl md:text-5xl font-black text-[#FFF2D6] leading-snug drop-shadow-md">
@@ -471,116 +408,51 @@ export default function AlAmeedStoreERP() {
           <p className="text-sm md:text-base text-[#FFF2D6]/90 max-w-2xl mx-auto">
             كحك ناعم، بسكويت فاخر، بيتي فور، غريبة، وأجود الحلويات الشرقية المصنوعة بأجود أنواع السمنة البلدي والمكسرات.
           </p>
-          <div className="flex flex-wrap items-center justify-center gap-4 pt-2 text-xs md:text-sm text-[#D5A642] font-bold">
-            <span className="flex items-center gap-1">
-              <MapPin className="w-4 h-4" /> الصبرية - شربين - طريق دمياط السريع
-            </span>
-            <a href="tel:01016552275" className="flex items-center gap-1 underline">
-              <Phone className="w-4 h-4" /> 01016552275
-            </a>
-          </div>
         </div>
       </section>
 
       {/* شريط الأقسام */}
       <main className="flex-1 max-w-6xl w-full mx-auto px-4 py-8">
         <div className="flex items-center gap-2 overflow-x-auto pb-4 mb-6">
-          <button
-            onClick={() => setSelectedCat('all')}
-            className={`px-5 py-2.5 rounded-full font-bold text-sm whitespace-nowrap transition shadow ${
-              selectedCat === 'all'
-                ? 'bg-[#D5A642] text-[#042821]'
-                : 'bg-[#021B17] text-[#FFF2D6] border border-[#D5A642]/30'
-            }`}
-          >
-            جميع الأصناف
-          </button>
+          <button onClick={() => setSelectedCat('all')} className={`px-5 py-2.5 rounded-full font-bold text-sm whitespace-nowrap transition shadow ${selectedCat === 'all' ? 'bg-[#D5A642] text-[#042821]' : 'bg-[#021B17] text-[#FFF2D6] border border-[#D5A642]/30'}`}>جميع الأصناف</button>
           {categories.map((cat) => (
-            <button
-              key={cat.id}
-              onClick={() => setSelectedCat(cat.id)}
-              className={`px-5 py-2.5 rounded-full font-bold text-sm whitespace-nowrap transition shadow ${
-                selectedCat === cat.id
-                  ? 'bg-[#D5A642] text-[#042821]'
-                  : 'bg-[#021B17] text-[#FFF2D6] border border-[#D5A642]/30'
-              }`}
-            >
-              {cat.name_ar}
-            </button>
+            <button key={cat.id} onClick={() => setSelectedCat(cat.id)} className={`px-5 py-2.5 rounded-full font-bold text-sm whitespace-nowrap transition shadow ${selectedCat === cat.id ? 'bg-[#D5A642] text-[#042821]' : 'bg-[#021B17] text-[#FFF2D6] border border-[#D5A642]/30'}`}>{cat.name_ar}</button>
           ))}
         </div>
 
         {/* قائمة المنتجات */}
         {loading ? (
-          <div className="text-center py-16 font-bold text-lg text-[#D5A642]">
-            جاري تحميل قائمة حلواني العميد...
-          </div>
+          <div className="text-center py-16 font-bold text-lg text-[#D5A642]">جاري تحميل قائمة حلواني العميد...</div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {filteredProducts.map((product) => {
               const inCart = cart.find((item) => item.product.id === product.id);
               return (
-                <div
-                  key={product.id}
-                  className="bg-[#021B17] rounded-2xl overflow-hidden shadow-lg border border-[#D5A642]/40 flex flex-col justify-between hover:border-[#D5A642] transition"
-                >
+                <div key={product.id} className="bg-[#021B17] rounded-2xl overflow-hidden shadow-lg border border-[#D5A642]/40 flex flex-col justify-between">
                   <div>
                     {product.image_url && (
-                      <div className="w-full h-48 bg-[#042821] overflow-hidden">
-                        <img
-                          src={product.image_url}
-                          alt={product.name_ar}
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
+                      <div className="w-full h-48 bg-[#042821] overflow-hidden"><img src={product.image_url} alt={product.name_ar} className="w-full h-full object-cover" /></div>
                     )}
-
                     <div className="p-5 pb-2">
                       <div className="flex items-start justify-between gap-2 mb-2">
                         <h3 className="text-lg font-black text-[#FFF2D6]">{product.name_ar}</h3>
-                        <span className="bg-[#042821] text-[#D5A642] border border-[#D5A642]/50 text-xs font-extrabold px-2.5 py-1 rounded-lg whitespace-nowrap">
-                          {product.unit}
-                        </span>
+                        <span className="bg-[#042821] text-[#D5A642] border border-[#D5A642]/50 text-xs font-extrabold px-2.5 py-1 rounded-lg whitespace-nowrap">{product.unit}</span>
                       </div>
-                      {product.description_ar && (
-                        <p className="text-xs text-[#FFF2D6]/75 mb-2">{product.description_ar}</p>
-                      )}
                     </div>
                   </div>
-
                   <div className="px-5 pb-5 pt-3 border-t border-[#042821] flex items-center justify-between">
                     <div>
                       <span className="text-2xl font-black text-[#D5A642]">{product.price}</span>
                       <span className="text-xs font-bold text-[#FFF2D6]/80 mr-1">ج.م</span>
                     </div>
-
-                    {!product.is_available ? (
-                      <span className="text-xs font-bold text-red-400 bg-red-950/50 px-3 py-1.5 rounded-lg border border-red-800">
-                        غير متوفر حالياً
-                      </span>
-                    ) : inCart ? (
+                    {inCart ? (
                       <div className="flex items-center gap-2 bg-[#D5A642] text-[#042821] px-2 py-1 rounded-xl">
-                        <button
-                          onClick={() => updateQty(product.id, 1)}
-                          className="p-1 hover:opacity-75 font-black"
-                        >
-                          <Plus className="w-4 h-4" />
-                        </button>
-                        <span className="font-black text-sm min-w-[20px] text-center">
-                          {inCart.quantity}
-                        </span>
-                        <button
-                          onClick={() => updateQty(product.id, -1)}
-                          className="p-1 hover:opacity-75 font-black"
-                        >
-                          <Minus className="w-4 h-4" />
-                        </button>
+                        <button onClick={() => updateQty(product.id, 1)} className="p-1 font-black"><Plus className="w-4 h-4" /></button>
+                        <span className="font-black text-sm min-w-[20px] text-center">{inCart.quantity}</span>
+                        <button onClick={() => updateQty(product.id, -1)} className="p-1 font-black"><Minus className="w-4 h-4" /></button>
                       </div>
                     ) : (
-                      <button
-                        onClick={() => addToCart(product)}
-                        className="flex items-center gap-1.5 bg-[#D5A642] text-[#042821] font-bold text-sm px-4 py-2 rounded-xl hover:brightness-105 transition shadow"
-                      >
+                      <button onClick={() => addToCart(product)} className="flex items-center gap-1.5 bg-[#D5A642] text-[#042821] font-bold text-sm px-4 py-2 rounded-xl shadow">
                         <Plus className="w-4 h-4" /> أضف للسلة
                       </button>
                     )}
@@ -595,128 +467,58 @@ export default function AlAmeedStoreERP() {
       {/* سلة عائمة */}
       {totalItemsCount > 0 && !isCartOpen && (
         <div className="fixed bottom-4 left-4 right-4 z-30 max-w-md mx-auto">
-          <button
-            onClick={() => {
-              setOrderSuccess(false);
-              setIsCartOpen(true);
-            }}
-            className="w-full bg-[#021B17] text-[#FFF2D6] border-2 border-[#D5A642] py-3.5 px-5 rounded-2xl shadow-2xl flex items-center justify-between font-black"
-          >
-            <span className="flex items-center gap-2">
-              <ShoppingBag className="w-5 h-5 text-[#D5A642]" />
-              إتمام الطلب ({totalItemsCount} أصناف)
-            </span>
+          <button onClick={() => { setOrderSuccess(false); setIsCartOpen(true); }} className="w-full bg-[#021B17] text-[#FFF2D6] border-2 border-[#D5A642] py-3.5 px-5 rounded-2xl shadow-2xl flex items-center justify-between font-black">
+            <span className="flex items-center gap-2"><ShoppingBag className="w-5 h-5 text-[#D5A642]" /> إتمام الطلب ({totalItemsCount} أصناف)</span>
             <span className="text-[#D5A642] text-lg">{totalAmount} ج.م</span>
           </button>
         </div>
       )}
 
-      {/* نافذة السلة */}
+      {/* نافذة السلة مع التعرف التلقائي على العميل برقم الهاتف */}
       {isCartOpen && (
         <div className="fixed inset-0 z-50 bg-black/70 flex items-end sm:items-center justify-center p-0 sm:p-4">
           <div className="bg-[#021B17] text-[#FFF2D6] w-full max-w-lg rounded-t-3xl sm:rounded-3xl max-h-[90vh] overflow-y-auto p-6 shadow-2xl border-t-4 border-[#D5A642]">
             <div className="flex items-center justify-between pb-4 border-b border-[#D5A642]/20">
-              <h3 className="text-xl font-black text-[#D5A642] flex items-center gap-2">
-                <ShoppingBag className="w-6 h-6" /> سلة طلباتك
-              </h3>
-              <button
-                onClick={() => setIsCartOpen(false)}
-                className="p-1.5 rounded-full bg-[#042821] text-[#FFF2D6]"
-              >
-                <X className="w-5 h-5" />
-              </button>
+              <h3 className="text-xl font-black text-[#D5A642] flex items-center gap-2"><ShoppingBag className="w-6 h-6" /> سلة طلباتك وإتمام الفاتورة</h3>
+              <button onClick={() => setIsCartOpen(false)} className="p-1.5 rounded-full bg-[#042821]"><X className="w-5 h-5" /></button>
             </div>
 
             {orderSuccess ? (
               <div className="py-10 text-center space-y-4">
                 <CheckCircle2 className="w-16 h-16 text-green-500 mx-auto" />
-                <h4 className="text-2xl font-black text-[#FFF2D6]">تم تجهيز طلبك بنجاح!</h4>
-                <p className="text-sm text-[#FFF2D6]/80">
-                  تم تحويلك إلى واتساب حلواني العميد لتأكيد الطلب وموعد التوصيل.
-                </p>
-                <button
-                  onClick={() => setIsCartOpen(false)}
-                  className="bg-[#D5A642] text-[#042821] font-bold px-6 py-2.5 rounded-xl"
-                >
-                  العودة للمتجر
-                </button>
+                <h4 className="text-2xl font-black text-[#FFF2D6]">تم تسجيل الطلب وإرسال الفاتورة!</h4>
+                <button onClick={() => setIsCartOpen(false)} className="bg-[#D5A642] text-[#042821] font-bold px-6 py-2.5 rounded-xl">العودة للمتجر</button>
               </div>
             ) : cart.length === 0 ? (
-              <div className="py-12 text-center text-[#FFF2D6]/70 font-bold">
-                السلة فارغة حالياً، اختر حلوياتك المفضلة من القائمة.
-              </div>
+              <div className="py-12 text-center text-[#FFF2D6]/70 font-bold">السلة فارغة حالياً.</div>
             ) : (
               <div className="space-y-5 mt-4">
                 <div className="space-y-2.5">
                   {cart.map((item) => (
-                    <div
-                      key={item.product.id}
-                      className="bg-[#042821] border border-[#D5A642]/20 p-3 rounded-xl flex items-center justify-between shadow-sm"
-                    >
+                    <div key={item.product.id} className="bg-[#042821] p-3 rounded-xl flex justify-between items-center">
                       <div>
-                        <p className="font-bold text-sm text-[#FFF2D6]">{item.product.name_ar}</p>
-                        <p className="text-xs text-[#FFF2D6]/70">
-                          {item.product.price} ج.م × {item.quantity} {item.product.unit}
-                        </p>
+                        <p className="font-bold text-sm">{item.product.name_ar}</p>
+                        <p className="text-xs opacity-70">{item.product.price} ج.م × {item.quantity}</p>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-black text-sm text-[#D5A642]">
-                          {item.product.price * item.quantity} ج.م
-                        </span>
-                        <button
-                          onClick={() => updateQty(item.product.id, -item.quantity)}
-                          className="text-red-400 p-1 hover:text-red-300"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
+                      <span className="font-black text-sm text-[#D5A642]">{item.product.price * item.quantity} ج.م</span>
                     </div>
                   ))}
                 </div>
 
-                <div className="bg-[#042821] border border-[#D5A642] text-[#FFF2D6] p-4 rounded-2xl flex items-center justify-between font-black">
+                <div className="bg-[#042821] border border-[#D5A642] p-4 rounded-2xl flex justify-between font-black">
                   <span>الإجمالي الكلي:</span>
-                  <span className="text-xl text-[#D5A642]">{totalAmount} جنيه مصري</span>
+                  <span className="text-xl text-[#D5A642]">{totalAmount} ج.م</span>
                 </div>
 
                 <form onSubmit={handleCheckout} className="space-y-3">
-                  <input
-                    type="text"
-                    required
-                    placeholder="الاسم بالكامل *"
-                    value={customerName}
-                    onChange={(e) => setCustomerName(e.target.value)}
-                    className="w-full bg-[#042821] text-[#FFF2D6] border border-[#D5A642]/30 rounded-xl px-4 py-3 text-sm font-semibold focus:outline-none focus:border-[#D5A642]"
-                  />
-                  <input
-                    type="tel"
-                    required
-                    placeholder="رقم الموبايل / واتساب *"
-                    value={customerPhone}
-                    onChange={(e) => setCustomerPhone(e.target.value)}
-                    className="w-full bg-[#042821] text-[#FFF2D6] border border-[#D5A642]/30 rounded-xl px-4 py-3 text-sm font-semibold focus:outline-none focus:border-[#D5A642]"
-                  />
-                  <input
-                    type="text"
-                    required
-                    placeholder="العنوان بالتفصيل للتوصيل *"
-                    value={customerAddress}
-                    onChange={(e) => setCustomerAddress(e.target.value)}
-                    className="w-full bg-[#042821] text-[#FFF2D6] border border-[#D5A642]/30 rounded-xl px-4 py-3 text-sm font-semibold focus:outline-none focus:border-[#D5A642]"
-                  />
-                  <input
-                    type="text"
-                    placeholder="ملاحظات إضافية (اختياري)"
-                    value={orderNotes}
-                    onChange={(e) => setOrderNotes(e.target.value)}
-                    className="w-full bg-[#042821] text-[#FFF2D6] border border-[#D5A642]/30 rounded-xl px-4 py-3 text-sm font-semibold focus:outline-none focus:border-[#D5A642]"
-                  />
-                  <button
-                    type="submit"
-                    disabled={submitting}
-                    className="w-full bg-[#25D366] text-white font-black py-3.5 rounded-xl shadow-lg hover:brightness-95 transition text-base"
-                  >
-                    {submitting ? 'جاري إرسال الطلب...' : 'تأكيد وإرسال الطلب عبر واتساب'}
+                  <div>
+                    <label className="text-xs font-bold block mb-1">رقم الهاتف (التعرف التلقائي على العميل):</label>
+                    <input type="tel" required placeholder="010XXXXXXXX" value={customerPhone} onChange={(e) => handlePhoneLookup(e.target.value)} className="w-full bg-[#042821] border border-[#D5A642]/30 rounded-xl px-4 py-3 text-sm" />
+                  </div>
+                  <input type="text" required placeholder="الاسم بالكامل *" value={customerName} onChange={(e) => setCustomerName(e.target.value)} className="w-full bg-[#042821] border border-[#D5A642]/30 rounded-xl px-4 py-3 text-sm" />
+                  <input type="text" required placeholder="العنوان بالتفصيل *" value={customerAddress} onChange={(e) => setCustomerAddress(e.target.value)} className="w-full bg-[#042821] border border-[#D5A642]/30 rounded-xl px-4 py-3 text-sm" />
+                  <button type="submit" disabled={submitting} className="w-full bg-[#25D366] text-white font-black py-3.5 rounded-xl shadow-lg">
+                    {submitting ? 'جاري الإصدار...' : 'إصدار الفاتورة وإرسالها عبر واتساب'}
                   </button>
                 </form>
               </div>
@@ -725,299 +527,122 @@ export default function AlAmeedStoreERP() {
         </div>
       )}
 
-      {/* نافذة لوحة الإدارة و ERP الشاملة */}
+      {/* لوحة إدارة المصنع ونظام العملاء والفواتير (CRM) */}
       {showAdminModal && (
         <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-2 sm:p-4">
           <div className="bg-[#021B17] text-[#FFF2D6] w-full max-w-4xl rounded-3xl max-h-[95vh] overflow-y-auto p-4 sm:p-6 shadow-2xl border-t-4 border-[#D5A642]">
             <div className="flex items-center justify-between pb-4 border-b border-[#D5A642]/20">
-              <h3 className="text-xl font-black text-[#D5A642] flex items-center gap-2">
-                <Store className="w-6 h-6" /> نظام الإدارة الشامل (AL AMEED ERP)
-              </h3>
-              <button
-                onClick={() => setShowAdminModal(false)}
-                className="p-1.5 rounded-full bg-[#042821] text-[#FFF2D6]"
-              >
-                <X className="w-5 h-5" />
-              </button>
+              <h3 className="text-xl font-black text-[#D5A642] flex items-center gap-2"><Store className="w-6 h-6" /> العملاء والفواتير ونظام الولاء (CRM & ERP)</h3>
+              <button onClick={() => setShowAdminModal(false)} className="p-1.5 rounded-full bg-[#042821]"><X className="w-5 h-5" /></button>
             </div>
 
             {!adminUser ? (
               <form onSubmit={handleAdminLogin} className="space-y-4 mt-8 max-w-sm mx-auto">
-                <p className="text-sm text-center text-[#FFF2D6]/80 font-bold">
-                  تسجيل دخول الإدارة للوصول لنظام ERP ولوحة التحكم
-                </p>
-                {authError && (
-                  <p className="text-xs text-red-400 bg-red-950 p-2.5 rounded-lg text-center font-bold border border-red-800">
-                    {authError}
-                  </p>
-                )}
-                <input
-                  type="email"
-                  required
-                  placeholder="البريد الإلكتروني للإدارة"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full bg-[#042821] text-[#FFF2D6] border border-[#D5A642]/30 rounded-xl px-4 py-3 text-sm"
-                />
-                <input
-                  type="password"
-                  required
-                  placeholder="كلمة المرور"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full bg-[#042821] text-[#FFF2D6] border border-[#D5A642]/30 rounded-xl px-4 py-3 text-sm"
-                />
-                <button
-                  type="submit"
-                  className="w-full bg-[#D5A642] text-[#042821] font-black py-3 rounded-xl shadow"
-                >
-                  دخول لوحة إدارة المصنع
-                </button>
+                <p className="text-sm text-center font-bold">تسجيل دخول الإدارة</p>
+                {authError && <p className="text-xs text-red-400 bg-red-950 p-2.5 rounded-lg text-center font-bold">{authError}</p>}
+                <input type="email" required placeholder="البريد الإلكتروني" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full bg-[#042821] border border-[#D5A642]/30 rounded-xl px-4 py-3 text-sm" />
+                <input type="password" required placeholder="كلمة المرور" value={password} onChange={(e) => setPassword(e.target.value)} className="w-full bg-[#042821] border border-[#D5A642]/30 rounded-xl px-4 py-3 text-sm" />
+                <button type="submit" className="w-full bg-[#D5A642] text-[#042821] font-black py-3 rounded-xl shadow">دخول لوحة التحكم</button>
               </form>
             ) : (
               <div className="space-y-6 mt-5">
-                {/* شريط تبويب الإدارة */}
+                {/* شريط التبويبات المحدث */}
                 <div className="flex items-center justify-between bg-[#042821] p-3 rounded-xl border border-[#D5A642]/30">
                   <div className="flex gap-2 overflow-x-auto">
-                    <button
-                      onClick={() => setAdminTab('store')}
-                      className={`px-3 py-1.5 rounded-lg font-bold text-xs whitespace-nowrap ${
-                        adminTab === 'store' ? 'bg-[#D5A642] text-[#042821]' : 'text-[#FFF2D6]'
-                      }`}
-                    >
-                      إدارة المتجر والمنتجات
-                    </button>
-                    <button
-                      onClick={() => setAdminTab('erp')}
-                      className={`px-3 py-1.5 rounded-lg font-bold text-xs whitespace-nowrap ${
-                        adminTab === 'erp' ? 'bg-[#D5A642] text-[#042821]' : 'text-[#FFF2D6]'
-                      }`}
-                    >
-                      مبيعات ERP
-                    </button>
-                    <button
-                      onClick={() => setAdminTab('raw')}
-                      className={`px-3 py-1.5 rounded-lg font-bold text-xs whitespace-nowrap ${
-                        adminTab === 'raw' ? 'bg-[#D5A642] text-[#042821]' : 'text-[#FFF2D6]'
-                      }`}
-                    >
-                      السمنة والخامات
-                    </button>
+                    <button onClick={() => setAdminTab('store')} className={`px-3 py-1.5 rounded-lg font-bold text-xs whitespace-nowrap ${adminTab === 'store' ? 'bg-[#D5A642] text-[#042821]' : ''}`}>الإعدادات والمتجر</button>
+                    <button onClick={() => setAdminTab('customers')} className={`px-3 py-1.5 rounded-lg font-bold text-xs whitespace-nowrap ${adminTab === 'customers' ? 'bg-[#D5A642] text-[#042821]' : ''}`}>إدارة العملاء (CRM)</button>
+                    <button onClick={() => setAdminTab('new-sale')} className={`px-3 py-1.5 rounded-lg font-bold text-xs whitespace-nowrap ${adminTab === 'new-sale' ? 'bg-[#D5A642] text-[#042821]' : ''}`}>+ تسجيل بيع وفاتورة</button>
+                    <button onClick={() => setAdminTab('crm')} className={`px-3 py-1.5 rounded-lg font-bold text-xs whitespace-nowrap ${adminTab === 'crm' ? 'bg-[#D5A642] text-[#042821]' : ''}`}>سجل الفواتير</button>
                   </div>
-                  <button
-                    onClick={async () => {
-                      await supabase.auth.signOut();
-                      setAdminUser(null);
-                    }}
-                    className="flex items-center gap-1 text-xs font-bold text-red-400 shrink-0 mr-2"
-                  >
-                    <LogOut className="w-4 h-4" /> خروج
-                  </button>
+                  <button onClick={async () => { await supabase.auth.signOut(); setAdminUser(null); }} className="text-xs font-bold text-red-400 shrink-0 mr-2 flex items-center gap-1"><LogOut className="w-4 h-4" /> خروج</button>
                 </div>
 
-                {/* تبويب إدارة المتجر والمنتجات */}
+                {/* تبويب إعدادات المتجر */}
                 {adminTab === 'store' && (
-                  <div className="space-y-6">
-                    {/* تعديل اللوجو */}
+                  <div className="space-y-4">
                     <div className="bg-[#042821] border border-[#D5A642]/40 p-4 rounded-2xl space-y-3">
-                      <div className="flex items-center justify-between gap-3">
-                        <div className="flex items-center gap-3">
-                          {logoPreview || logoUrl ? (
-                            <img
-                              src={logoPreview || logoUrl!}
-                              alt="اللوجو"
-                              className="w-12 h-12 rounded-full object-cover border-2 border-[#D5A642]"
-                            />
-                          ) : (
-                            <div className="w-12 h-12 rounded-full bg-[#D5A642] text-[#042821] flex items-center justify-center font-black text-lg">
-                              ع
-                            </div>
-                          )}
-                          <div>
-                            <p className="font-black text-sm text-[#FFF2D6]">صورة اللوجو (الشريط العلوي)</p>
-                            <p className="text-xs text-[#FFF2D6]/75">تظهر في أعلى الموقع بجانب الاسم</p>
-                          </div>
-                        </div>
-                        <label className="cursor-pointer bg-[#021B17] border border-[#D5A642] text-[#D5A642] font-bold text-xs px-3 py-2 rounded-xl flex items-center gap-1.5 shrink-0 hover:bg-[#042821]">
-                          <Camera className="w-4 h-4" />
-                          <span>{selectedLogoFile ? 'تم اختيار صورة' : 'اختر صورة'}</span>
-                          <input
-                            type="file"
-                            accept="image/*"
-                            className="hidden"
-                            onChange={(e) => {
-                              const file = e.target.files?.[0];
-                              if (file) {
-                                setSelectedLogoFile(file);
-                                setLogoPreview(URL.createObjectURL(file));
-                              }
-                            }}
-                          />
-                        </label>
-                      </div>
-                      {selectedLogoFile && (
-                        <button
-                          onClick={handleSaveLogo}
-                          disabled={uploadingId === 'logo'}
-                          className="w-full bg-[#D5A642] text-[#042821] font-bold text-xs py-2 rounded-xl flex items-center justify-center gap-1.5 shadow"
-                        >
-                          {uploadingId === 'logo' && <Loader2 className="w-4 h-4 animate-spin" />}
-                          حفظ وتحديث اللوجو
-                        </button>
-                      )}
+                      <p className="font-black text-sm text-[#D5A642]">إدارة شعار المصنع (اللوجو)</p>
+                      <input type="file" accept="image/*" onChange={(e) => setSelectedLogoFile(e.target.files?.[0] || null)} className="text-xs" />
+                      {selectedLogoFile && <button onClick={handleSaveLogo} className="bg-[#D5A642] text-[#042821] px-4 py-2 rounded-xl text-xs font-bold">حفظ اللوجو</button>}
                     </div>
-
-                    {/* إدارة السلايدر */}
                     <div className="bg-[#042821] border border-[#D5A642]/40 p-4 rounded-2xl space-y-3">
-                      <h4 className="font-black text-sm text-[#D5A642]">🖼️ إدارة البانرات المتحركة (السلايدر)</h4>
-                      <form onSubmit={handleAddBanner} className="space-y-2 bg-[#021B17] p-3 rounded-xl border border-[#D5A642]/20">
-                        <label className="flex items-center gap-2 cursor-pointer border border-dashed border-[#D5A642]/40 px-3 py-2 rounded-xl text-xs font-bold text-[#FFF2D6] hover:bg-[#042821]">
-                          <ImageIcon className="w-4 h-4 text-[#D5A642]" />
-                          <span>{newBannerFile ? newBannerFile.name : 'اختر صورة بانر جديدة'}</span>
-                          <input
-                            type="file"
-                            accept="image/*"
-                            className="hidden"
-                            onChange={(e) => {
-                              const file = e.target.files?.[0];
-                              if (file) setNewBannerFile(file);
-                            }}
-                          />
-                        </label>
-                        {newBannerFile && (
-                          <button
-                            type="submit"
-                            disabled={uploadingId === 'banner-add'}
-                            className="w-full bg-[#D5A642] text-[#042821] font-bold text-xs py-2 rounded-xl flex items-center justify-center gap-1.5"
-                          >
-                            رفع وإضافة للبانرات المتحركة
-                          </button>
-                        )}
-                      </form>
-                      <div className="space-y-2 max-h-40 overflow-y-auto">
-                        {banners.map((b) => (
-                          <div key={b.id} className="flex items-center justify-between bg-[#021B17] p-2 rounded-xl border border-[#D5A642]/20">
-                            <img src={b.image_url} alt="بانر" className="w-16 h-10 object-cover rounded-lg" />
-                            <button
-                              onClick={() => handleDeleteBanner(b.id)}
-                              className="bg-red-950 text-red-400 p-2 rounded-lg"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* إضافة منتج */}
-                    <form onSubmit={handleAddProduct} className="bg-[#042821] border border-[#D5A642]/30 p-4 rounded-2xl space-y-3">
-                      <h4 className="font-black text-sm text-[#D5A642]">+ إضافة صنف جديد للقائمة</h4>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                        <input
-                          type="text"
-                          required
-                          placeholder="اسم الصنف"
-                          value={newProductName}
-                          onChange={(e) => setNewProductName(e.target.value)}
-                          className="border border-[#D5A642]/30 rounded-xl px-3 py-2 text-sm bg-[#021B17] text-[#FFF2D6]"
-                        />
-                        <input
-                          type="number"
-                          required
-                          placeholder="السعر بالجنيه"
-                          value={newProductPrice}
-                          onChange={(e) => setNewProductPrice(e.target.value)}
-                          className="border border-[#D5A642]/30 rounded-xl px-3 py-2 text-sm bg-[#021B17] text-[#FFF2D6]"
-                        />
-                        <select
-                          value={newProductCat}
-                          onChange={(e) => setNewProductCat(e.target.value)}
-                          className="border border-[#D5A642]/30 rounded-xl px-3 py-2 text-sm bg-[#021B17] text-[#FFF2D6]"
-                        >
-                          {categories.map((c) => (
-                            <option key={c.id} value={c.id}>
-                              {c.name_ar}
-                            </option>
-                          ))}
-                        </select>
-                        <input
-                          type="text"
-                          placeholder="الوحدة (كيلو / علبة)"
-                          value={newProductUnit}
-                          onChange={(e) => setNewProductUnit(e.target.value)}
-                          className="border border-[#D5A642]/30 rounded-xl px-3 py-2 text-sm bg-[#021B17] text-[#FFF2D6]"
-                        />
-                      </div>
-                      <button
-                        type="submit"
-                        className="w-full bg-[#D5A642] text-[#042821] font-bold text-xs py-2.5 rounded-xl"
-                      >
-                        حفظ وإضافة الصنف
-                      </button>
-                    </form>
-
-                    {/* تعديل الأسعار */}
-                    <div className="space-y-2 max-h-60 overflow-y-auto">
-                      <h4 className="font-black text-sm text-[#D5A642]">تعديل أسعار وصور المنتجات:</h4>
-                      {products.map((p) => (
-                        <div key={p.id} className="flex items-center justify-between border border-[#D5A642]/20 p-2.5 rounded-xl bg-[#042821] text-sm">
-                          <span className="font-bold">{p.name_ar}</span>
-                          <div className="flex items-center gap-2">
-                            {editingProductId === p.id ? (
-                              <>
-                                <input
-                                  type="number"
-                                  value={editPrice}
-                                  onChange={(e) => setEditPrice(e.target.value)}
-                                  className="w-16 border rounded px-1 text-black"
-                                />
-                                <button onClick={() => handleSavePrice(p.id)} className="bg-green-600 px-2 py-1 rounded text-xs">حفظ</button>
-                              </>
-                            ) : (
-                              <>
-                                <span className="text-[#D5A642] font-bold">{p.price} ج.م</span>
-                                <button onClick={() => { setEditingProductId(p.id); setEditPrice(String(p.price)); }} className="text-blue-400 p-1"><Edit3 className="w-4 h-4" /></button>
-                              </>
-                            )}
-                          </div>
-                        </div>
-                      ))}
+                      <p className="font-black text-sm text-[#D5A642]">إدارة بانرات السلايدر</p>
+                      <input type="file" accept="image/*" onChange={(e) => setNewBannerFile(e.target.files?.[0] || null)} className="text-xs" />
+                      {newBannerFile && <button onClick={handleAddBanner} className="bg-[#D5A642] text-[#042821] px-4 py-2 rounded-xl text-xs font-bold">رفع البانر</button>}
                     </div>
                   </div>
                 )}
 
-                {/* تبويب مبيعات ERP */}
-                {adminTab === 'erp' && (
+                {/* تبويب إدارة العملاء (CRM) */}
+                {adminTab === 'customers' && (
                   <div className="space-y-4">
-                    <h4 className="font-black text-base text-[#D5A642]">سجل مبيعات نظام ERP</h4>
+                    <h4 className="font-black text-base text-[#D5A642] flex items-center gap-2"><Users className="w-5 h-5" /> قاعدة بيانات العملاء (سجل الشراء والولاء)</h4>
+                    <div className="space-y-2 max-h-96 overflow-y-auto">
+                      {customers.map(c => (
+                        <div key={c.id} className="bg-[#042821] p-3 rounded-xl border border-[#D5A642]/20 flex justify-between items-center text-sm">
+                          <div>
+                            <p className="font-bold text-[#FFF2D6]">{c.name} <span className="text-xs text-[#D5A642]">({c.phone})</span></p>
+                            <p className="text-xs opacity-75">عدد المرات: {c.total_purchases} | إجمالي المشتريات: {c.total_spent} ج.م</p>
+                          </div>
+                          <span className="bg-[#D5A642] text-[#042821] px-2.5 py-1 rounded-lg text-xs font-black">{c.customer_type || 'عادي'}</span>
+                        </div>
+                      ))}
+                      {customers.length === 0 && <p className="text-sm opacity-70">لا توجد عملاء مسجلون حالياً.</p>}
+                    </div>
+                  </div>
+                )}
+
+                {/* تبويب تسجيل عملية بيع وإصدار فاتورة إلكترونية */}
+                {adminTab === 'new-sale' && (
+                  <form onSubmit={handleCrmManualSale} className="bg-[#042821] border border-[#D5A642]/40 p-5 rounded-2xl space-y-4">
+                    <h4 className="font-black text-base text-[#D5A642] flex items-center gap-2"><UserPlus className="w-5 h-5" /> تسجيل عملية بيع جديدة وإصدار فاتورة</h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label className="text-xs font-bold block mb-1">رقم الهاتف (التعرف التلقائي):</label>
+                        <input type="tel" required placeholder="010XXXXXXXX" value={crmCustPhone} onChange={(e) => { setCrmCustPhone(e.target.value); }} className="w-full bg-[#021B17] border border-[#D5A642]/30 rounded-xl px-3 py-2 text-sm" />
+                      </div>
+                      <div>
+                        <label className="text-xs font-bold block mb-1">اسم العميل:</label>
+                        <input type="text" required placeholder="اسم العميل" value={crmCustName} onChange={(e) => setCrmCustName(e.target.value)} className="w-full bg-[#021B17] border border-[#D5A642]/30 rounded-xl px-3 py-2 text-sm" />
+                      </div>
+                      <div>
+                        <label className="text-xs font-bold block mb-1">العنوان:</label>
+                        <input type="text" placeholder="عنوان العميل" value={crmCustAddress} onChange={(e) => setCrmCustAddress(e.target.value)} className="w-full bg-[#021B17] border border-[#D5A642]/30 rounded-xl px-3 py-2 text-sm" />
+                      </div>
+                      <div>
+                        <label className="text-xs font-bold block mb-1">اختر المنتج:</label>
+                        <select value={crmProdId} onChange={(e) => setCrmProdId(e.target.value)} className="w-full bg-[#021B17] border border-[#D5A642]/30 rounded-xl px-3 py-2 text-sm">
+                          {products.map(p => (<option key={p.id} value={p.id}>{p.name_ar} ({p.price} ج.م)</option>))}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="text-xs font-bold block mb-1">الكمية:</label>
+                        <input type="number" min="1" required value={crmQty} onChange={(e) => setCrmQty(e.target.value)} className="w-full bg-[#021B17] border border-[#D5A642]/30 rounded-xl px-3 py-2 text-sm" />
+                      </div>
+                      <div>
+                        <label className="text-xs font-bold block mb-1">خصم (إن وجد):</label>
+                        <input type="number" min="0" value={crmDiscount} onChange={(e) => setCrmDiscount(e.target.value)} className="w-full bg-[#021B17] border border-[#D5A642]/30 rounded-xl px-3 py-2 text-sm" />
+                      </div>
+                    </div>
+                    <button type="submit" className="w-full bg-[#D5A642] text-[#042821] font-black py-3 rounded-xl shadow">حفظ الفاتورة وتحديث المخزون والعميل</button>
+                  </form>
+                )}
+
+                {/* تبويب سجل الفواتير والمبيعات */}
+                {adminTab === 'crm' && (
+                  <div className="space-y-4">
+                    <h4 className="font-black text-base text-[#D5A642] flex items-center gap-2"><FileText className="w-5 h-5" /> سجل الفواتير الإلكترونية ومبيعات المصنع</h4>
                     <div className="space-y-2 max-h-96 overflow-y-auto">
                       {erpSales.map(s => (
                         <div key={s.id} className="bg-[#042821] p-3 rounded-xl border border-[#D5A642]/20 flex justify-between items-center text-sm">
                           <div>
-                            <p className="font-bold">عملية بيع رقم #{s.invoice_number}</p>
-                            <p className="text-xs text-[#FFF2D6]/70">{s.notes || 'مبيعات مباشرة'}</p>
+                            <p className="font-bold">فاتورة إلكترونية رقم #{s.invoice_number}</p>
+                            <p className="text-xs text-[#FFF2D6]/70">{s.notes || 'عملية بيع'}</p>
                           </div>
                           <span className="text-[#D5A642] font-black">{s.total_amount} ج.م</span>
                         </div>
                       ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* تبويب السمنة والخامات */}
-                {adminTab === 'raw' && (
-                  <div className="space-y-4">
-                    <h4 className="font-black text-base text-[#D5A642]">مخزن الخامات (سمنة بلدي، زيوت، دقيق)</h4>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      {rawMaterials.map(r => (
-                        <div key={r.id} className="bg-[#042821] p-3 rounded-xl border border-[#D5A642]/20">
-                          <p className="font-bold">{r.name}</p>
-                          <p className="text-xs text-[#D5A642]">الكمية الحالية: {r.quantity} {r.unit}</p>
-                        </div>
-                      ))}
-                      {rawMaterials.length === 0 && (
-                        <p className="text-sm text-[#FFF2D6]/70">لا توجد خامات مسجلة في جدول raw_materials حالياً.</p>
-                      )}
+                      {erpSales.length === 0 && <p className="text-sm opacity-70">لا توجد فواتير مسجلة بعد.</p>}
                     </div>
                   </div>
                 )}
@@ -1030,15 +655,10 @@ export default function AlAmeedStoreERP() {
       {/* الفوتر */}
       <footer className="bg-[#021B17] text-[#FFF2D6] py-6 px-4 text-center border-t-2 border-[#D5A642] mt-10 space-y-2">
         <p className="font-black text-[#D5A642] text-base">حلواني العميد</p>
-        <p className="text-xs text-[#FFF2D6]/80">
-          الصبرية - شربين - طريق دمياط السريع | للطلبات والاستفسار: 01016552275
-        </p>
+        <p className="text-xs text-[#FFF2D6]/80">الصبرية - شربين - طريق دمياط السريع | للطلبات: 01016552275</p>
         <div className="pt-2">
-          <button
-            onClick={() => setShowAdminModal(true)}
-            className="inline-flex items-center gap-1.5 text-xs text-[#D5A642] hover:underline bg-[#042821] px-3 py-1.5 rounded-lg border border-[#D5A642]/30 transition"
-          >
-            <Lock className="w-3.5 h-3.5" /> إدارة الموقع ونظام ERP
+          <button onClick={() => setShowAdminModal(true)} className="inline-flex items-center gap-1.5 text-xs text-[#D5A642] hover:underline bg-[#042821] px-3 py-1.5 rounded-lg border border-[#D5A642]/30 transition">
+            <Lock className="w-3.5 h-3.5" /> نظام العملاء والفواتير (CRM)
           </button>
         </div>
       </footer>
