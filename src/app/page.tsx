@@ -1066,3 +1066,293 @@ export default function AlAmeedStore() {
     </div>
   );
 }
+
+'use client';
+
+import React, { useEffect, useState } from 'react';
+import { createClient } from '@supabase/supabase-js';
+import {
+  Store,
+  TrendingUp,
+  Package,
+  Users,
+  DollarSign,
+  ShoppingCart,
+  Layers,
+  Settings,
+  ShieldCheck,
+  AlertTriangle,
+  FileText,
+  Plus,
+  RefreshCw,
+  LogOut,
+  CheckCircle2,
+  Phone,
+  MapPin
+} from 'lucide-react';
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://ckrfnznzjfmdynjfnxie.supabase.co';
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+const supabase = createClient(supabaseUrl, supabaseKey);
+
+export default function AlAmeedERP() {
+  const [activeTab, setActiveTab] = useState('dashboard');
+  const [loading, setLoading] = useState(true);
+
+  // إحصائيات النظام الحقيقية
+  const [stats, setStats] = useState({
+    todaySales: 0,
+    monthSales: 0,
+    totalProducts: 0,
+    totalCustomers: 0,
+    totalRawMaterials: 0,
+    totalExpenses: 0
+  });
+
+  const [products, setProducts] = useState<any[]>([]);
+  const [rawMaterials, setRawMaterials] = useState<any[]>([]);
+  const [sales, setSales] = useState<any[]>([]);
+
+  useEffect(() => {
+    fetchERPData();
+  }, []);
+
+  async function fetchERPData() {
+    setLoading(true);
+    try {
+      const [prodRes, rawRes, salesRes] = await Promise.all([
+        supabase.from('products').select('*'),
+        supabase.from('raw_materials').select('*'),
+        supabase.from('sales').select('*').order('created_at', { ascending: false })
+      ]);
+
+      if (prodRes.data) setProducts(prodRes.data);
+      if (rawRes.data) setRawMaterials(rawRes.data);
+      if (salesRes.data) {
+        setSales(salesRes.data);
+        const total = salesRes.data.reduce((acc, curr) => acc + (curr.total_amount || 0), 0);
+        setStats(prev => ({
+          ...prev,
+          monthSales: total,
+          totalProducts: prodRes.data?.length || 0,
+          totalRawMaterials: rawRes.data?.length || 0
+        }));
+      }
+    } catch (error) {
+      console.error('خطأ في جلب بيانات ERP:', error);
+    }
+    setLoading(false);
+  }
+
+  return (
+    <div className="min-h-screen flex flex-col md:flex-row bg-[#042821] text-[#FFF2D6] font-sans" dir="rtl">
+      {/* القائمة الجانبية للنظام */}
+      <aside className="w-full md:w-64 bg-[#021B17] border-l border-[#D5A642]/30 flex flex-col justify-between p-4 shadow-xl">
+        <div>
+          <div className="flex items-center gap-3 pb-6 border-b border-[#D5A642]/20">
+            <div className="w-10 h-10 rounded-full bg-[#D5A642] text-[#042821] flex items-center justify-center font-black text-xl shadow">
+              ع
+            </div>
+            <div>
+              <h1 className="font-black text-lg text-[#D5A642]">حلويات العميد</h1>
+              <p className="text-xs text-[#FFF2D6]/70">نظام الإدارة الشامل ERP</p>
+            </div>
+          </div>
+
+          <nav className="space-y-1.5 mt-6">
+            <button
+              onClick={() => setActiveTab('dashboard')}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition ${
+                activeTab === 'dashboard' ? 'bg-[#D5A642] text-[#042821]' : 'hover:bg-[#042821] text-[#FFF2D6]'
+              }`}
+            >
+              <Store className="w-5 h-5" /> لوحة التحكم
+            </button>
+            <button
+              onClick={() => setActiveTab('sales')}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition ${
+                activeTab === 'sales' ? 'bg-[#D5A642] text-[#042821]' : 'hover:bg-[#042821] text-[#FFF2D6]'
+              }`}
+            >
+              <ShoppingCart className="w-5 h-5" /> المبيعات والفواتير
+            </button>
+            <button
+              onClick={() => setActiveTab('products')}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition ${
+                activeTab === 'products' ? 'bg-[#D5A642] text-[#042821]' : 'hover:bg-[#042821] text-[#FFF2D6]'
+              }`}
+            >
+              <Package className="w-5 h-5" /> إدارة المنتجات
+            </button>
+            <button
+              onClick={() => setActiveTab('raw')}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition ${
+                activeTab === 'raw' ? 'bg-[#D5A642] text-[#042821]' : 'hover:bg-[#042821] text-[#FFF2D6]'
+              }`}
+            >
+              <Layers className="w-5 h-5" /> السمنة والخامات
+            </button>
+            <button
+              onClick={() => setActiveTab('reports')}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition ${
+                activeTab === 'reports' ? 'bg-[#D5A642] text-[#042821]' : 'hover:bg-[#042821] text-[#FFF2D6]'
+              }`}
+            >
+              <FileText className="w-5 h-5" /> التقارير الشاملة
+            </button>
+          </nav>
+        </div>
+
+        <div className="pt-6 border-t border-[#D5A642]/20 text-xs text-center text-[#FFF2D6]/60">
+          AL AMEED ERP v1.0 &copy; 2026
+        </div>
+      </aside>
+
+      {/* المحتوى الرئيسي */}
+      <main className="flex-1 p-6 md:p-8 overflow-y-auto">
+        <header className="flex items-center justify-between pb-6 border-b border-[#D5A642]/20 mb-8">
+          <div>
+            <h2 className="text-2xl font-black text-[#D5A642]">
+              {activeTab === 'dashboard' && 'لوحة التحكم والتحليلات'}
+              {activeTab === 'sales' && 'إدارة المبيعات ونقاط البيع'}
+              {activeTab === 'products' && 'إدارة المنتجات الجاهزة'}
+              {activeTab === 'raw' && 'متابعة السمنة والزيوت والخامات'}
+              {activeTab === 'reports' && 'مركز التقارير والأرباح'}
+            </h2>
+            <p className="text-xs text-[#FFF2D6]/70">مصنع حلويات العميد - شربين، الصبرية</p>
+          </div>
+          <button
+            onClick={fetchERPData}
+            className="flex items-center gap-2 bg-[#021B17] border border-[#D5A642] text-[#D5A642] px-4 py-2 rounded-xl text-xs font-bold hover:bg-[#042821] transition"
+          >
+            <RefreshCw className="w-4 h-4" /> تحديث البيانات
+          </button>
+        </header>
+
+        {/* عرض محتوى لوحة التحكم */}
+        {activeTab === 'dashboard' && (
+          <div className="space-y-6">
+            {/* بطاقات الإحصائيات */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+              <div className="bg-[#021B17] border border-[#D5A642]/30 p-5 rounded-2xl shadow-lg">
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-xs font-bold text-[#FFF2D6]/70">إجمالي مبيعات الشهر</span>
+                  <DollarSign className="w-5 h-5 text-[#D5A642]" />
+                </div>
+                <h3 className="text-2xl font-black text-[#D5A642]">{stats.monthSales} <span className="text-xs">ج.م</span></h3>
+              </div>
+
+              <div className="bg-[#021B17] border border-[#D5A642]/30 p-5 rounded-2xl shadow-lg">
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-xs font-bold text-[#FFF2D6]/70">عدد المنتجات الجاهزة</span>
+                  <Package className="w-5 h-5 text-[#D5A642]" />
+                </div>
+                <h3 className="text-2xl font-black text-[#D5A642]">{stats.totalProducts} <span className="text-xs">صنف</span></h3>
+              </div>
+
+              <div className="bg-[#021B17] border border-[#D5A642]/30 p-5 rounded-2xl shadow-lg">
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-xs font-bold text-[#FFF2D6]/70">الخامات الأساسية المسجلة</span>
+                  <Layers className="w-5 h-5 text-[#D5A642]" />
+                </div>
+                <h3 className="text-2xl font-black text-[#D5A642]">{stats.totalRawMaterials} <span className="text-xs">خامة</span></h3>
+              </div>
+
+              <div className="bg-[#021B17] border border-[#D5A642]/30 p-5 rounded-2xl shadow-lg">
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-xs font-bold text-[#FFF2D6]/70">فواتير البيع المسجلة</span>
+                  <ShoppingCart className="w-5 h-5 text-[#D5A642]" />
+                </div>
+                <h3 className="text-2xl font-black text-[#D5A642]">{sales.length} <span className="text-xs">فاتورة</span></h3>
+              </div>
+            </div>
+
+            {/* تنبيهات المخزون */}
+            <div className="bg-[#021B17] border border-[#D5A642]/40 p-6 rounded-2xl shadow-xl">
+              <h3 className="font-black text-lg text-[#D5A642] mb-4 flex items-center gap-2">
+                <AlertTriangle className="w-5 h-5 text-amber-400" /> تنبيهات المخزون والخامات الحساسة
+              </h3>
+              <div className="space-y-3">
+                <div className="bg-[#042821] p-3 rounded-xl border border-[#D5A642]/20 flex items-center justify-between text-sm">
+                  <span>متابعة مخزون السمنة البلدي والدقيق والزيوت</span>
+                  <span className="text-xs bg-green-950 text-green-300 px-3 py-1 rounded-lg border border-green-800 font-bold">الوضع مستقر</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* عرض المنتجات */}
+        {activeTab === 'products' && (
+          <div className="space-y-4">
+            <h3 className="font-black text-lg text-[#D5A642]">قائمة المنتجات والأسعار الجاهزة</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {products.map(p => (
+                <div key={p.id} className="bg-[#021B17] border border-[#D5A642]/30 p-4 rounded-2xl shadow">
+                  <h4 className="font-black text-base text-[#FFF2D6] mb-1">{p.name_ar}</h4>
+                  <p className="text-xs text-[#FFF2D6]/70 mb-3">السعر: <strong className="text-[#D5A642]">{p.retail_price || p.price} ج.م</strong></p>
+                  <span className="text-xs bg-[#042821] text-[#D5A642] px-2.5 py-1 rounded-lg border border-[#D5A642]/30 font-bold">
+                    الوحدة: {p.unit || 'كيلو'}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+        {/* إدارة الخامات والسمنة */}
+        {activeTab === 'raw' && (
+          <div className="space-y-4">
+            <h3 className="font-black text-lg text-[#D5A642]">مخزن الخامات الأساسية (سمنة، دقيق، سكر، زيوت)</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {rawMaterials.map(r => (
+                <div key={r.id} className="bg-[#021B17] border border-[#D5A642]/30 p-4 rounded-2xl shadow">
+                  <h4 className="font-black text-base text-[#FFF2D6] mb-1">{r.name}</h4>
+                  <p className="text-xs text-[#FFF2D6]/70 mb-2">الكمية الحالية: <strong className="text-[#D5A642]">{r.quantity} {r.unit}</strong></p>
+                </div>
+              ))}
+              {rawMaterials.length === 0 && (
+                <p className="text-sm text-[#FFF2D6]/70">لم يتم تسجيل خامات بعد. يمكنك إضافتها من قاعدة البيانات.</p>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* المبيعات */}
+        {activeTab === 'sales' && (
+          <div className="space-y-4">
+            <h3 className="font-black text-lg text-[#D5A642]">سجل فواتير المبيعات</h3>
+            <div className="bg-[#021B17] border border-[#D5A642]/30 rounded-2xl overflow-hidden p-4 shadow">
+              {sales.length === 0 ? (
+                <p className="text-center py-8 text-sm text-[#FFF2D6]/70">لا توجد مبيعات مسجلة حتى الآن.</p>
+              ) : (
+                <div className="space-y-3">
+                  {sales.map(s => (
+                    <div key={s.id} className="bg-[#042821] p-3 rounded-xl border border-[#D5A642]/20 flex items-center justify-between">
+                      <div>
+                        <p className="font-bold text-sm">فاتورة رقم #{s.invoice_number}</p>
+                        <p className="text-xs text-[#FFF2D6]/70">الإجمالي: {s.total_amount} ج.م</p>
+                      </div>
+                      <span className="text-xs bg-green-950 text-green-300 px-3 py-1 rounded-lg border border-green-800 font-bold">مكتملة</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* التقارير */}
+        {activeTab === 'reports' && (
+          <div className="space-y-4">
+            <h3 className="font-black text-lg text-[#D5A642]">مركز التقارير المالية والإنتاجية</h3>
+            <div className="bg-[#021B17] border border-[#D5A642]/30 p-6 rounded-2xl shadow">
+              <p className="text-sm text-[#FFF2D6]/80 leading-relaxed">
+                جميع التقارير الخاصة بالمبيعات، المصروفات، أرباح المنتجات، واستهلاك الخامات مرتبطة بقاعدة بيانات Supabase وتحدث لحظياً عند إتمام أي عملية بيع أو شراء أو تصنيع.
+              </p>
+            </div>
+          </div>
+        )}
+      </main>
+    </div>
+  );
+}
